@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-textPrimary font-sans antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading font-semibold text-textPrimary;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white font-heading font-semibold py-2 px-6 rounded-md hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-md;
+  }
+  .btn-secondary {
+    @apply bg-secondary text-white font-heading font-semibold py-2 px-6 rounded-md hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-md;
+  }
+}

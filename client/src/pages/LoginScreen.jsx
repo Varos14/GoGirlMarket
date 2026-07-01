@@ -1,0 +1,84 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { login } from '../store/authSlice';
+
+const LoginScreen = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const auth = useSelector((state) => state.auth);
+  const { loading, error, userInfo } = auth;
+
+  const redirect = location.search ? location.search.split('=')[1] : '/';
+
+  useEffect(() => {
+    if (userInfo) {
+      navigate(redirect);
+    }
+  }, [navigate, userInfo, redirect]);
+
+  const submitHandler = (e) => {
+    e.preventDefault();
+    dispatch(login({ email, password }));
+  };
+
+  return (
+    <div className="max-w-md mx-auto mt-16 p-8 bg-white rounded-xl shadow-lg border border-gray-100">
+      <h1 className="text-3xl font-heading font-bold mb-6 text-center text-textPrimary">Welcome Back</h1>
+      {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">{error}</div>}
+      
+      <form onSubmit={submitHandler} className="space-y-6">
+        <div>
+          <label className="block text-gray-700 font-semibold mb-2">Email Address</label>
+          <input
+            type="email"
+            required
+            className="w-full p-3 border rounded-md outline-none focus:border-primary transition-colors"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+          />
+        </div>
+        <div>
+          <label className="block text-gray-700 font-semibold mb-2">Password</label>
+          <input
+            type="password"
+            required
+            className="w-full p-3 border rounded-md outline-none focus:border-primary transition-colors"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+          />
+        </div>
+        
+        <button 
+          type="submit" 
+          disabled={loading}
+          className={`w-full btn-primary py-3 text-lg flex justify-center items-center ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+        >
+          {loading ? (
+            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+          ) : (
+            'Sign In'
+          )}
+        </button>
+      </form>
+      
+      <div className="mt-6 text-center">
+        <p className="text-gray-600">
+          New Customer?{' '}
+          <Link to={redirect ? `/register?redirect=${redirect}` : '/register'} className="text-primary font-bold hover:underline">
+            Register Here
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default LoginScreen;

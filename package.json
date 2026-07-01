@@ -1,0 +1,19 @@
+{
+  "name": "gogirl-market",
+  "version": "1.0.0",
+  "description": "GoGirl Market - Uganda's Marketplace for Women",
+  "private": true,
+  "workspaces": [
+    "client",
+    "admin",
+    "vendor",
+    "server"
+  ],
+  "scripts": {
+    "dev:client": "npm run dev --workspace=client",
+    "dev:admin": "npm run dev --workspace=admin",
+    "dev:vendor": "npm run dev --workspace=vendor",
+    "dev:server": "npm run dev --workspace=server",
+    "dev": "npm run dev:server & npm run dev:client"
+  }
+}
