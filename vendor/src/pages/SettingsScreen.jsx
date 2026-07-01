@@ -11,6 +11,11 @@ const SettingsScreen = () => {
   const [locationStr, setLocationStr] = useState('');
   const [storeSlug, setStoreSlug] = useState('');
   
+  // Payout fields
+  const [bankCode, setBankCode] = useState('MTN');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountName, setAccountName] = useState('');
+  
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
@@ -29,6 +34,11 @@ const SettingsScreen = () => {
       setPhone(vendorInfo.phone || '');
       setLocationStr(vendorInfo.location || '');
       setStoreSlug(vendorInfo.storeSlug || '');
+      if (vendorInfo.payout) {
+        setBankCode(vendorInfo.payout.bankCode || 'MTN');
+        setAccountNumber(vendorInfo.payout.accountNumber || '');
+        setAccountName(vendorInfo.payout.accountName || '');
+      }
     }
   }, []);
 
@@ -69,7 +79,10 @@ const SettingsScreen = () => {
 
       const { data } = await axios.put(
         '/api/auth/profile',
-        { name, email, storeName, tagline, phone, location: locationStr, password },
+        { 
+          name, email, storeName, tagline, phone, location: locationStr, password,
+          payout: { bankCode, accountNumber, accountName }
+        },
         config
       );
 
@@ -171,6 +184,50 @@ const SettingsScreen = () => {
                     value={locationStr}
                     onChange={(e) => setLocationStr(e.target.value)}
                     placeholder="e.g. Kampala, Uganda"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <hr className="border-gray-100" />
+
+            {/* Payout Information */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <Store size={20} className="text-primary" />
+                Payout Settings (Get Paid)
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">Enter your Mobile Money or Bank details so you can receive automatic payouts (93% of sales).</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Network / Bank</label>
+                  <select
+                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
+                    value={bankCode}
+                    onChange={(e) => setBankCode(e.target.value)}
+                  >
+                    <option value="MTN">MTN Mobile Money</option>
+                    <option value="AIRTEL">Airtel Money</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Mobile Number</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value)}
+                    placeholder="e.g. 0771234567"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Registered Name</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
+                    value={accountName}
+                    onChange={(e) => setAccountName(e.target.value)}
+                    placeholder="e.g. Jane Doe"
                   />
                 </div>
               </div>

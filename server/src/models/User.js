@@ -20,6 +20,14 @@ const userSchema = new mongoose.Schema({
   location: { type: String },
   isApproved: { type: Boolean, default: false }, // For vendors
   
+  // Payout information (Flutterwave Splits)
+  payout: {
+    bankCode: { type: String }, // e.g. 'MTN', 'AIRTEL'
+    accountNumber: { type: String },
+    accountName: { type: String },
+    flutterwaveSubaccountId: { type: String }
+  },
+  
   // Password Reset fields
   resetPasswordToken: String,
   resetPasswordExpire: Date,

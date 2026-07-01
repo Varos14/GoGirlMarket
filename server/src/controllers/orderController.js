@@ -103,6 +103,62 @@ const updateOrderToPaid = async (req, res) => {
   }
 };
 
+// @desc    Process Flutterwave Split Payment
+// @route   POST /api/orders/:id/flutterwave
+// @access  Private
+const processFlutterwavePayment = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate('user', 'name email')
+      .populate({
+        path: 'orderItems.product',
+        select: 'vendor name price'
+      });
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // 1. Find all unique vendors in this order
+    const vendorIds = [...new Set(order.orderItems.map(item => item.product?.vendor?.toString()).filter(Boolean))];
+
+    // 2. Fetch those vendors to get their Flutterwave Subaccount IDs
+    const vendors = await User.find({ _id: { $in: vendorIds } });
+
+    // 3. Construct the subaccounts array for Flutterwave (7% commission to platform, 93% to vendor)
+    const subaccounts = vendors.map(vendor => {
+      // If vendor has a payout subaccount, use it. Otherwise, funds just go to main account.
+      if (vendor.payout?.flutterwaveSubaccountId) {
+        return {
+          id: vendor.payout.flutterwaveSubaccountId,
+          transaction_split_ratio: 93,
+          transaction_charge_type: 'percentage',
+          transaction_charge: 7 // Platform takes 7%
+        };
+      }
+      return null;
+    }).filter(Boolean);
+
+    // 4. In a real app, we would make an axios call to Flutterwave API here to initialize the payment
+    // and return the payment link to the frontend.
+    // For this MVP, we will mock the successful creation of the payment link.
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    res.json({
+      success: true,
+      message: 'Payment initialized successfully',
+      payment_url: `https://mock-flutterwave-checkout.com/pay/${order._id}`,
+      subaccounts_applied: subaccounts.length,
+      split_details: subaccounts
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
 // @desc    Get logged in user orders
 // @route   GET /api/orders/myorders
 // @access  Private
@@ -222,4 +278,5 @@ module.exports = {
   getVendorOrders,
   updateOrderToDelivered,
   getDashboardStats,
+  processFlutterwavePayment,
 };

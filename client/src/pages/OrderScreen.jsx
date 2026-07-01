@@ -4,90 +4,86 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getOrderDetails, payOrder, orderPayReset } from '../store/orderSlice';
 import axios from 'axios';
 
-// Stripe
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { getOrderDetails, payOrder, orderPayReset } from '../store/orderSlice';
+import axios from 'axios';
 
-const CheckoutForm = ({ orderId, amount, onSuccess }) => {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [error, setError] = useState(null);
+const FlutterwaveCheckout = ({ orderId, amount, onSuccess }) => {
   const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState(null);
+  const userLogin = useSelector((state) => state.userLogin);
+  const { userInfo } = userLogin;
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    if (!stripe || !elements) {
-      return;
-    }
-
-    setProcessing(true);
-
-    const cardElement = elements.getElement(CardElement);
-
-    // In a real app, you would hit your backend to create a PaymentIntent and get the client_secret
-    // For this MVP, we simulate success immediately using Stripe test mode methodology
-    
-    // Simulate API delay
-    setTimeout(() => {
-      const mockPaymentResult = {
-        id: 'mock_stripe_id_' + Math.random().toString(36).substr(2, 9),
-        status: 'succeeded',
-        update_time: new Date().toISOString(),
-        payer: { email_address: 'test@example.com' },
-      };
+  const handlePayment = async () => {
+    try {
+      setProcessing(true);
+      setError(null);
       
-      onSuccess(mockPaymentResult);
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+
+      // 1. Hit our backend to generate the Flutterwave link with split payload
+      const { data } = await axios.post(`/api/orders/${orderId}/flutterwave`, {}, config);
+
+      console.log("Flutterwave Split Response:", data);
+
+      // 2. In a real app, we would redirect the user to data.payment_url here
+      // window.location.href = data.payment_url;
+      
+      // Since this is a mock, we simulate a successful payment popup and callback
+      setTimeout(() => {
+        const mockPaymentResult = {
+          id: 'FLW_' + Math.random().toString(36).substr(2, 9),
+          status: 'successful',
+          update_time: new Date().toISOString(),
+          email_address: userInfo.email,
+        };
+        
+        onSuccess(mockPaymentResult);
+        setProcessing(false);
+      }, 2000);
+
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
       setProcessing(false);
-    }, 1500);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-      <div className="p-4 border rounded-md bg-white">
-        <CardElement options={{
-          style: {
-            base: {
-              fontSize: '16px',
-              color: '#424770',
-              '::placeholder': { color: '#aab7c4' },
-            },
-            invalid: { color: '#9e2146' },
-          },
-        }} />
+    <div className="mt-4 space-y-4">
+      {error && <div className="text-red-500 text-sm mt-2 p-3 bg-red-50 border border-red-200 rounded">{error}</div>}
+      
+      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+        <p className="text-sm text-orange-800">
+          <strong>Note:</strong> Clicking "Pay Now" will open the secure Flutterwave checkout where you can pay via MTN Mobile Money, Airtel Money, or Card.
+        </p>
       </div>
-      {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+
       <button 
-        type="submit" 
-        disabled={!stripe || processing}
-        className="w-full btn-primary py-3 flex justify-center items-center"
+        onClick={handlePayment}
+        disabled={processing}
+        className="w-full bg-[#f5a623] hover:bg-[#e09612] text-white font-bold py-4 rounded-xl flex justify-center items-center shadow-lg transition-colors"
       >
         {processing ? (
           <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
         ) : (
-          `Pay UGX ${amount.toLocaleString()}`
+          `Pay UGX ${amount.toLocaleString()} with Flutterwave`
         )}
       </button>
-    </form>
+    </div>
   );
 };
+
+
 
 const OrderScreen = () => {
   const { id: orderId } = useParams();
   const dispatch = useDispatch();
 
-  const [stripePromise, setStripePromise] = useState(null);
-
   const orderState = useSelector((state) => state.order);
   const { order, loading, error, successPay, loadingPay } = orderState;
-
-  useEffect(() => {
-    const fetchStripeKey = async () => {
-      const { data } = await axios.get('/api/config/stripe');
-      setStripePromise(loadStripe(data));
-    };
-    fetchStripeKey();
-  }, []);
 
   useEffect(() => {
     if (!order || order._id !== orderId || successPay) {
@@ -200,12 +196,10 @@ const OrderScreen = () => {
               </div>
             </div>
 
-            {!order.isPaid && stripePromise && (
+            {!order.isPaid && (
               <div className="mt-8 border-t pt-6">
-                <h3 className="font-bold text-gray-700 mb-4">Pay with Card</h3>
-                <Elements stripe={stripePromise}>
-                  <CheckoutForm orderId={orderId} amount={order.totalPrice} onSuccess={handlePaymentSuccess} />
-                </Elements>
+                <h3 className="font-bold text-gray-700 mb-4">Complete Payment</h3>
+                <FlutterwaveCheckout orderId={orderId} amount={order.totalPrice} onSuccess={handlePaymentSuccess} />
               </div>
             )}
           </div>

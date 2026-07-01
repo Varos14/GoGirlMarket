@@ -63,6 +63,7 @@ const loginUser = async (req, res) => {
         tagline: user.tagline,
         phone: user.phone,
         location: user.location,
+        payout: user.payout,
         token: generateToken(user._id),
       });
     } else {
@@ -90,6 +91,7 @@ const getUserProfile = async (req, res) => {
         tagline: user.tagline,
         phone: user.phone,
         location: user.location,
+        payout: user.payout,
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -115,6 +117,16 @@ const updateUserProfile = async (req, res) => {
         if (req.body.tagline !== undefined) user.tagline = req.body.tagline;
         if (req.body.phone !== undefined) user.phone = req.body.phone;
         if (req.body.location !== undefined) user.location = req.body.location;
+        
+        if (req.body.payout) {
+          user.payout = {
+            bankCode: req.body.payout.bankCode,
+            accountNumber: req.body.payout.accountNumber,
+            accountName: req.body.payout.accountName,
+            // Mocking a successful subaccount creation with Flutterwave
+            flutterwaveSubaccountId: `RS_${Math.floor(Math.random() * 90000) + 10000}_${Date.now().toString().slice(-4)}`
+          };
+        }
       }
 
       if (req.body.password) {
@@ -133,6 +145,7 @@ const updateUserProfile = async (req, res) => {
         tagline: updatedUser.tagline,
         phone: updatedUser.phone,
         location: updatedUser.location,
+        payout: updatedUser.payout,
         token: generateToken(updatedUser._id),
       });
     } else {
