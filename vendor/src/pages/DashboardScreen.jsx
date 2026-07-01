@@ -68,9 +68,16 @@ const DashboardScreen = () => {
     fetchDashboardData();
   }, []);
 
+  const getStoreUrl = (slug) => {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return `http://localhost:5173/store/${slug}`;
+    }
+    return `https://gogirlmarket.com/store/${slug}`;
+  };
+
   const copyLink = () => {
     if (storeSlug) {
-      navigator.clipboard.writeText(`https://gogirlmarket.com/store/${storeSlug}`);
+      navigator.clipboard.writeText(getStoreUrl(storeSlug));
       setCopied(true);
       setTimeout(() => setCopied(false), 3000);
     }
@@ -94,7 +101,7 @@ const DashboardScreen = () => {
               </div>
               <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200 w-full sm:w-auto">
                 <span className="text-gray-500 font-mono text-sm truncate max-w-[200px] md:max-w-xs">
-                  gogirlmarket.com/store/{storeSlug}
+                  {getStoreUrl(storeSlug).replace(/^https?:\/\//, '')}
                 </span>
                 <button 
                   onClick={copyLink}

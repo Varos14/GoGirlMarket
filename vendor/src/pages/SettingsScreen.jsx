@@ -32,10 +32,16 @@ const SettingsScreen = () => {
     }
   }, []);
 
+  const getStoreUrl = (slug) => {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return `http://localhost:5173/store/${slug}`;
+    }
+    return `https://gogirlmarket.com/store/${slug}`;
+  };
+
   const copyStoreLink = () => {
     if (storeSlug) {
-      const link = `https://gogirlmarket.com/store/${storeSlug}`;
-      navigator.clipboard.writeText(link);
+      navigator.clipboard.writeText(getStoreUrl(storeSlug));
       setSuccess('Store link copied to clipboard!');
       setTimeout(() => setSuccess(''), 3000);
     }
@@ -111,7 +117,7 @@ const SettingsScreen = () => {
           <div>
             <h2 className="text-xl font-bold text-gray-800">{storeName || 'Your Store'}</h2>
             <p className="text-sm text-gray-500">{email}</p>
-            {storeSlug && <p className="text-xs text-primary mt-1">gogirlmarket.com/store/{storeSlug}</p>}
+            {storeSlug && <p className="text-xs text-primary mt-1">{getStoreUrl(storeSlug).replace(/^https?:\/\//, '')}</p>}
           </div>
         </div>
 
