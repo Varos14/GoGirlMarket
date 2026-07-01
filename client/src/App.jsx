@@ -9,6 +9,8 @@ import PaymentScreen from './pages/PaymentScreen';
 import PlaceOrderScreen from './pages/PlaceOrderScreen';
 import LoginScreen from './pages/LoginScreen';
 import RegisterScreen from './pages/RegisterScreen';
+import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
+import ResetPasswordScreen from './pages/ResetPasswordScreen';
 import ProfileScreen from './pages/ProfileScreen';
 import OrderScreen from './pages/OrderScreen';
 import CartScreen from './pages/CartScreen';
@@ -100,6 +102,8 @@ function App() {
           <Route path="/cart" element={<CartScreen />} />
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/register" element={<RegisterScreen />} />
+          <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordScreen />} />
           <Route path="/profile" element={<ProfileScreen />} />
           <Route path="/shipping" element={<ShippingScreen />} />
           <Route path="/payment" element={<PaymentScreen />} />

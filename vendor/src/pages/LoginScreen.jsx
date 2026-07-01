@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 const LoginScreen = () => {
@@ -46,7 +47,15 @@ const LoginScreen = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="block text-sm font-semibold text-gray-700">Password</label>
+              <Link 
+                to="/forgot-password"
+                className="text-xs font-bold text-primary hover:text-pink-700 transition-colors"
+              >
+                Forgot Password?
+              </Link>
+            </div>
             <input 
               type="password" 
               required
@@ -58,6 +67,13 @@ const LoginScreen = () => {
           <button type="submit" className="w-full bg-primary text-white font-bold py-3 rounded-xl hover:bg-secondary transition-colors shadow-md">
             Enter Dashboard
           </button>
+          
+          <div className="mt-4 text-center text-sm">
+            <span className="text-gray-600">Want to sell with us? </span>
+            <Link to="/register" className="text-primary font-bold hover:underline">
+              Apply as a Vendor
+            </Link>
+          </div>
         </form>
       </div>
     </div>

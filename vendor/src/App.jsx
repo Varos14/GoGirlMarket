@@ -6,6 +6,9 @@ import ProductsScreen from './pages/ProductsScreen';
 import OrdersScreen from './pages/OrdersScreen';
 import SettingsScreen from './pages/SettingsScreen';
 import LoginScreen from './pages/LoginScreen';
+import RegisterScreen from './pages/RegisterScreen';
+import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
+import ResetPasswordScreen from './pages/ResetPasswordScreen';
 
 function App() {
   const location = useLocation();
@@ -14,6 +17,9 @@ function App() {
   if (!vendorInfo || (vendorInfo.role !== 'vendor' && vendorInfo.role !== 'admin')) {
     return (
       <Routes>
+        <Route path="/register" element={<RegisterScreen />} />
+        <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordScreen />} />
         <Route path="*" element={<LoginScreen />} />
       </Routes>
     );
