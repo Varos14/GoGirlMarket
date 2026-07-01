@@ -19,8 +19,8 @@ function AdminLayout() {
 
   return (
     <div className="flex h-screen bg-surface font-sans">
-      {/* Sidebar */}
-      <div className="w-64 bg-gray-900 text-white flex flex-col z-20 shadow-2xl relative overflow-hidden">
+      {/* Sidebar - Desktop Only */}
+      <div className="hidden md:flex w-64 bg-gray-900 text-white flex-col z-20 shadow-2xl relative overflow-hidden">
         {/* Subtle background glow effect */}
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-primary/10 to-transparent pointer-events-none"></div>
         
@@ -62,7 +62,7 @@ function AdminLayout() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
-        <header className="h-20 bg-white shadow-sm border-b border-gray-100 flex items-center justify-between px-10 z-10 sticky top-0">
+        <header className="h-20 bg-white shadow-sm border-b border-gray-100 flex items-center justify-between px-4 sm:px-10 z-10 sticky top-0">
           <div className="flex items-center gap-4">
             <Link to="/" className="flex-shrink-0 flex items-center">
               <img src="/logo.png" alt="GoGirl Market" className="h-10 w-auto" />
@@ -83,7 +83,7 @@ function AdminLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-surface p-8">
+        <main className="flex-1 overflow-y-auto bg-surface p-4 sm:p-8 pb-24 md:pb-8">
           <Routes>
             <Route path="/" element={<DashboardScreen />} />
             <Route path="/users" element={<UsersScreen />} />
@@ -93,6 +93,26 @@ function AdminLayout() {
           </Routes>
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900 text-white border-t border-gray-800 flex justify-around items-center h-16 z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.5)] pb-safe">
+        <Link to="/" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
+          <LayoutDashboard size={20} />
+          <span className="text-[10px] mt-1 font-bold tracking-wide">Dashboard</span>
+        </Link>
+        <Link to="/users" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/users' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
+          <Users size={20} />
+          <span className="text-[10px] mt-1 font-bold tracking-wide">Users</span>
+        </Link>
+        <Link to="/vendors" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/vendors' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
+          <Store size={20} />
+          <span className="text-[10px] mt-1 font-bold tracking-wide">Vendors</span>
+        </Link>
+        <Link to="/orders" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/orders' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
+          <ClipboardList size={20} />
+          <span className="text-[10px] mt-1 font-bold tracking-wide">Orders</span>
+        </Link>
+      </nav>
     </div>
   );
 }

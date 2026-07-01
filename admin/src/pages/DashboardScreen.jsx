@@ -47,9 +47,9 @@ const DashboardScreen = () => {
 
   return (
     <div className="animate-fade-in">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-heading font-extrabold text-gray-800 tracking-tight">Admin Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-gray-800 tracking-tight">Admin Dashboard</h1>
           <p className="text-gray-500 text-sm mt-1">Welcome back. Here's what's happening today.</p>
         </div>
         <button 
@@ -119,7 +119,7 @@ const DashboardScreen = () => {
 
           {/* Revenue Chart */}
           <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 p-6 lg:p-8">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
               <h2 className="text-xl font-heading font-bold text-gray-800">Revenue Overview</h2>
               <select className="border border-gray-200 text-sm font-medium rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20">
                 <option>Last 6 Months</option>

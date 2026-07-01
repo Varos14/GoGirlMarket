@@ -57,9 +57,9 @@ const OrdersScreen = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-heading font-extrabold text-gray-800 flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-gray-800 flex items-center gap-3">
             <ShieldCheck className="text-primary w-8 h-8" /> 
             Global Orders Management
           </h1>
@@ -67,7 +67,7 @@ const OrdersScreen = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-8">
         {loading ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
