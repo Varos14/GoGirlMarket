@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Product = require('../models/Product');
 
 // @desc    Get all users
 // @route   GET /api/users
@@ -62,8 +63,32 @@ const updateUserRole = async (req, res) => {
   }
 };
 
+// @desc    Get vendor profile by slug
+// @route   GET /api/users/store/:slug
+// @access  Public
+const getVendorBySlug = async (req, res) => {
+  try {
+    const vendor = await User.findOne({ storeSlug: req.params.slug, role: 'vendor' })
+      .select('-password -resetPasswordToken -resetPasswordExpire');
+
+    if (!vendor) {
+      return res.status(404).json({ message: 'Vendor store not found' });
+    }
+
+    const products = await Product.find({ vendor: vendor._id });
+
+    res.json({
+      vendor,
+      products
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
 module.exports = {
   getUsers,
   deleteUser,
   updateUserRole,
+  getVendorBySlug,
 };

@@ -31,6 +31,8 @@ const registerUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        storeName: user.storeName,
+        storeSlug: user.storeSlug,
         token: generateToken(user._id),
       });
     } else {
@@ -56,6 +58,11 @@ const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        storeName: user.storeName,
+        storeSlug: user.storeSlug,
+        tagline: user.tagline,
+        phone: user.phone,
+        location: user.location,
         token: generateToken(user._id),
       });
     } else {
@@ -79,6 +86,10 @@ const getUserProfile = async (req, res) => {
         email: user.email,
         role: user.role,
         storeName: user.storeName,
+        storeSlug: user.storeSlug,
+        tagline: user.tagline,
+        phone: user.phone,
+        location: user.location,
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -99,8 +110,11 @@ const updateUserProfile = async (req, res) => {
       user.name = req.body.name || user.name;
       user.email = req.body.email || user.email;
       
-      if (user.role === 'vendor' && req.body.storeName) {
-        user.storeName = req.body.storeName;
+      if (user.role === 'vendor' || user.role === 'admin') {
+        if (req.body.storeName) user.storeName = req.body.storeName;
+        if (req.body.tagline !== undefined) user.tagline = req.body.tagline;
+        if (req.body.phone !== undefined) user.phone = req.body.phone;
+        if (req.body.location !== undefined) user.location = req.body.location;
       }
 
       if (req.body.password) {
@@ -115,6 +129,10 @@ const updateUserProfile = async (req, res) => {
         email: updatedUser.email,
         role: updatedUser.role,
         storeName: updatedUser.storeName,
+        storeSlug: updatedUser.storeSlug,
+        tagline: updatedUser.tagline,
+        phone: updatedUser.phone,
+        location: updatedUser.location,
         token: generateToken(updatedUser._id),
       });
     } else {

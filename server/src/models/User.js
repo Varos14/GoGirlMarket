@@ -13,7 +13,11 @@ const userSchema = new mongoose.Schema({
   },
   // Vendor specific fields
   storeName: { type: String },
+  storeSlug: { type: String, unique: true, sparse: true },
   storeDescription: { type: String },
+  tagline: { type: String },
+  phone: { type: String },
+  location: { type: String },
   isApproved: { type: Boolean, default: false }, // For vendors
   
   // Password Reset fields
@@ -23,8 +27,15 @@ const userSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Password hashing middleware
+const slugify = require('slugify');
+
+// Password hashing and slug generation middleware
 userSchema.pre('save', async function(next) {
+  // Generate store slug if storeName is provided and storeSlug is missing or storeName modified
+  if (this.role === 'vendor' && this.storeName && (!this.storeSlug || this.isModified('storeName'))) {
+    this.storeSlug = slugify(this.storeName, { lower: true, strict: true }) + '-' + Math.floor(1000 + Math.random() * 9000);
+  }
+
   if (!this.isModified('password')) {
     return next();
   }

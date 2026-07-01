@@ -10,6 +10,8 @@ const DashboardScreen = () => {
     totalCustomers: 0,
     recentOrders: []
   });
+  const [storeSlug, setStoreSlug] = useState('');
+  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,6 +20,7 @@ const DashboardScreen = () => {
         const vendorInfoStr = localStorage.getItem('vendorInfo');
         if (!vendorInfoStr) throw new Error('Not logged in');
         const vendorInfo = JSON.parse(vendorInfoStr);
+        setStoreSlug(vendorInfo.storeSlug || '');
         
         const config = {
           headers: { Authorization: `Bearer ${vendorInfo.token}` },
@@ -65,6 +68,14 @@ const DashboardScreen = () => {
     fetchDashboardData();
   }, []);
 
+  const copyLink = () => {
+    if (storeSlug) {
+      navigator.clipboard.writeText(`https://gogirlmarket.com/store/${storeSlug}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    }
+  };
+
   return (
     <div>
       <h1 className="text-3xl font-heading font-bold text-textPrimary mb-8">Dashboard Overview</h1>
@@ -75,6 +86,26 @@ const DashboardScreen = () => {
         </div>
       ) : (
         <>
+          {storeSlug && (
+            <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+              <div>
+                <h3 className="text-lg font-bold text-primary mb-1">Share Your Store</h3>
+                <p className="text-gray-600 text-sm">Send this link to your friends and customers so they can shop directly from your store!</p>
+              </div>
+              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200 w-full sm:w-auto">
+                <span className="text-gray-500 font-mono text-sm truncate max-w-[200px] md:max-w-xs">
+                  gogirlmarket.com/store/{storeSlug}
+                </span>
+                <button 
+                  onClick={copyLink}
+                  className="bg-primary text-white font-bold px-4 py-2 rounded-md hover:bg-primary/90 transition-colors shrink-0 text-sm ml-2"
+                >
+                  {copied ? 'Copied!' : 'Copy Link'}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {/* Revenue Card */}
             <div className="bg-gradient-to-br from-pink-500 to-rose-600 p-6 rounded-2xl shadow-[0_8px_30px_rgb(233,30,99,0.2)] text-white relative overflow-hidden group">

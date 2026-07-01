@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { getUsers, deleteUser, updateUserRole } = require('../controllers/userController');
+const { getUsers, deleteUser, updateUserRole, getVendorBySlug } = require('../controllers/userController');
 const { protect, admin } = require('../middleware/authMiddleware');
+
+router.route('/store/:slug')
+  .get(getVendorBySlug);
 
 router.route('/')
   .get(protect, admin, getUsers);

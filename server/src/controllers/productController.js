@@ -203,4 +203,59 @@ const createProductReview = async (req, res) => {
   }
 };
 
-module.exports = { getProducts, getProductById, createProduct, updateProduct, deleteProduct, createProductReview };
+const csv = require('csv-parser');
+const stream = require('stream');
+
+// @desc    Import products via CSV
+// @route   POST /api/products/bulk
+// @access  Private/Vendor
+const importProductsCSV = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
+
+  const results = [];
+  const bufferStream = new stream.PassThrough();
+  bufferStream.end(req.file.buffer);
+
+  bufferStream
+    .pipe(csv())
+    .on('data', (data) => {
+      // Clean keys in case of BOM or whitespace
+      const cleanData = {};
+      for (const key in data) {
+        cleanData[key.trim().replace(/^[\uFEFF\xA0]+|[\uFEFF\xA0]+$/g, '')] = data[key];
+      }
+
+      // Basic validation: must have Name, Price
+      if (cleanData.Name && cleanData.Price) {
+        results.push({
+          name: cleanData.Name,
+          price: Number(cleanData.Price) || 0,
+          description: cleanData.Description || '',
+          category: cleanData.Category || 'General',
+          brand: cleanData.Brand || 'Generic',
+          countInStock: Number(cleanData.Stock) || 0,
+          vendor: req.user._id,
+          images: [], // Images will be empty as decided
+        });
+      }
+    })
+    .on('end', async () => {
+      try {
+        if (results.length === 0) {
+          return res.status(400).json({ message: 'No valid products found in CSV. Make sure columns are named Name, Price, Stock, Description, Category, Brand.' });
+        }
+        
+        await Product.insertMany(results);
+        res.status(201).json({ message: `Successfully imported ${results.length} products`, count: results.length });
+      } catch (error) {
+        res.status(500).json({ message: 'Failed to insert products', error: error.message });
+      }
+    })
+    .on('error', (error) => {
+      res.status(500).json({ message: 'Error parsing CSV', error: error.message });
+    });
+};
+
+module.exports = { getProducts, getProductById, createProduct, updateProduct, deleteProduct, createProductReview, importProductsCSV };

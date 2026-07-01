@@ -15,6 +15,7 @@ import ProfileScreen from './pages/ProfileScreen';
 import OrderScreen from './pages/OrderScreen';
 import CartScreen from './pages/CartScreen';
 import InfoPageScreen from './pages/InfoPageScreen';
+import VendorStoreScreen from './pages/VendorStoreScreen';
 import Footer from './components/Footer';
 import SearchBox from './components/SearchBox';
 import { logout } from './store/authSlice';
@@ -99,6 +100,7 @@ function App() {
           <Route path="/" element={<HomeScreen />} />
           <Route path="/shop" element={<ShopScreen />} />
           <Route path="/product/:id" element={<ProductDetailsScreen />} />
+          <Route path="/store/:slug" element={<VendorStoreScreen />} />
           <Route path="/cart" element={<CartScreen />} />
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/register" element={<RegisterScreen />} />

@@ -11,13 +11,15 @@
     "bcryptjs": "^3.0.3",
     "cloudinary": "^1.41.3",
     "cors": "^2.8.5",
+    "csv-parser": "^3.2.1",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^8.3.0",
     "multer": "^2.2.0",
     "multer-storage-cloudinary": "^4.0.0",
-    "nodemailer": "^9.0.3"
+    "nodemailer": "^9.0.3",
+    "slugify": "^1.6.9"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"

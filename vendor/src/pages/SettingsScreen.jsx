@@ -6,6 +6,11 @@ const SettingsScreen = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [storeName, setStoreName] = useState('');
+  const [tagline, setTagline] = useState('');
+  const [phone, setPhone] = useState('');
+  const [locationStr, setLocationStr] = useState('');
+  const [storeSlug, setStoreSlug] = useState('');
+  
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
@@ -20,8 +25,21 @@ const SettingsScreen = () => {
       setName(vendorInfo.name || '');
       setEmail(vendorInfo.email || '');
       setStoreName(vendorInfo.storeName || '');
+      setTagline(vendorInfo.tagline || '');
+      setPhone(vendorInfo.phone || '');
+      setLocationStr(vendorInfo.location || '');
+      setStoreSlug(vendorInfo.storeSlug || '');
     }
   }, []);
+
+  const copyStoreLink = () => {
+    if (storeSlug) {
+      const link = `https://gogirlmarket.com/store/${storeSlug}`;
+      navigator.clipboard.writeText(link);
+      setSuccess('Store link copied to clipboard!');
+      setTimeout(() => setSuccess(''), 3000);
+    }
+  };
 
   const submitHandler = async (e) => {
     e.preventDefault();
@@ -45,12 +63,13 @@ const SettingsScreen = () => {
 
       const { data } = await axios.put(
         '/api/auth/profile',
-        { name, email, storeName, password },
+        { name, email, storeName, tagline, phone, location: locationStr, password },
         config
       );
 
       // Update local storage
       localStorage.setItem('vendorInfo', JSON.stringify(data));
+      setStoreSlug(data.storeSlug || '');
       setSuccess('Profile Updated Successfully');
       setPassword('');
       setConfirmPassword('');
@@ -69,9 +88,19 @@ const SettingsScreen = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-heading font-bold text-textPrimary">Store Settings</h1>
-        <p className="text-gray-500 mt-2">Manage your vendor profile and store information.</p>
+      <div className="mb-8 flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-heading font-bold text-textPrimary">Store Settings</h1>
+          <p className="text-gray-500 mt-2">Manage your vendor profile and store information.</p>
+        </div>
+        {storeSlug && (
+          <button 
+            onClick={copyStoreLink}
+            className="bg-primary/10 text-primary font-bold px-4 py-2 rounded-lg hover:bg-primary/20 transition-colors"
+          >
+            Copy Personal Link
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 overflow-hidden">
@@ -82,6 +111,7 @@ const SettingsScreen = () => {
           <div>
             <h2 className="text-xl font-bold text-gray-800">{storeName || 'Your Store'}</h2>
             <p className="text-sm text-gray-500">{email}</p>
+            {storeSlug && <p className="text-xs text-primary mt-1">gogirlmarket.com/store/{storeSlug}</p>}
           </div>
         </div>
 
@@ -94,7 +124,7 @@ const SettingsScreen = () => {
             <div>
               <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <Store size={20} className="text-primary" />
-                Store Information
+                About Page Info (Public Profile)
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -105,6 +135,36 @@ const SettingsScreen = () => {
                     className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
                     value={storeName}
                     onChange={(e) => setStoreName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Tagline (Short bio)</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
+                    value={tagline}
+                    onChange={(e) => setTagline(e.target.value)}
+                    placeholder="e.g. Best organic beauty products"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Contact Phone</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+1234567890"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Location / Address</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
+                    value={locationStr}
+                    onChange={(e) => setLocationStr(e.target.value)}
+                    placeholder="e.g. Kampala, Uganda"
                   />
                 </div>
               </div>
