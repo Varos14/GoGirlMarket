@@ -132,13 +132,26 @@ const getOrders = async (req, res) => {
 // @access  Private/Vendor
 const getVendorOrders = async (req, res) => {
   try {
-    // In a real multi-vendor system, this query would be complex (aggregations)
-    // to filter only the specific order items belonging to the vendor.
-    // For MVP, we'll find orders where ANY product belongs to the vendor.
-    const orders = await Order.find({}).populate('user', 'id name email').sort({ createdAt: -1 });
+    // Populate the user AND the products in the orderItems
+    const orders = await Order.find({})
+      .populate('user', 'id name email')
+      .populate({
+        path: 'orderItems.product',
+        select: 'vendor name price'
+      })
+      .sort({ createdAt: -1 });
     
-    // We would filter this array based on the vendor's products
-    res.json(orders);
+    const vendorIdStr = req.user._id.toString();
+    
+    // Filter orders to only those containing products belonging to this vendor
+    const vendorOrders = orders.filter(order => {
+      // Check if any item in the order has a populated product with the correct vendor ID
+      return order.orderItems.some(item => 
+        item.product && item.product.vendor && item.product.vendor.toString() === vendorIdStr
+      );
+    });
+
+    res.json(vendorOrders);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
