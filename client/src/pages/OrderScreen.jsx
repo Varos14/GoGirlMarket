@@ -4,9 +4,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getOrderDetails, payOrder, orderPayReset } from '../store/orderSlice';
 import axios from 'axios';
 
-import { getOrderDetails, payOrder, orderPayReset } from '../store/orderSlice';
-import axios from 'axios';
-
 const FlutterwaveCheckout = ({ orderId, amount, onSuccess }) => {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
