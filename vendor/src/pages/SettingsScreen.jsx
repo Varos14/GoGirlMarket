@@ -36,7 +36,7 @@ const SettingsScreen = () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return `http://localhost:5173/store/${slug}`;
     }
-    return `https://gogirlmarket.com/store/${slug}`;
+    return `https://go-girl-market-client.vercel.app/store/${slug}`;
   };
 
   const copyStoreLink = () => {
