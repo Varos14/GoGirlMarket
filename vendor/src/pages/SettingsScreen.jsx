@@ -10,15 +10,15 @@ const SettingsScreen = () => {
   const [phone, setPhone] = useState('');
   const [locationStr, setLocationStr] = useState('');
   const [storeSlug, setStoreSlug] = useState('');
-  
+
   // Payout fields
   const [bankCode, setBankCode] = useState('MTN');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState('');
-  
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -79,7 +79,7 @@ const SettingsScreen = () => {
 
       const { data } = await axios.put(
         '/api/auth/profile',
-        { 
+        {
           name, email, storeName, tagline, phone, location: locationStr, password,
           payout: { bankCode, accountNumber, accountName }
         },
@@ -93,12 +93,12 @@ const SettingsScreen = () => {
       setPassword('');
       setConfirmPassword('');
       setLoading(false);
-      
+
       // Force app re-render to update header
       setTimeout(() => {
         window.location.reload();
       }, 1500);
-      
+
     } catch (err) {
       setError(err.response?.data?.message || err.message);
       setLoading(false);
@@ -107,19 +107,9 @@ const SettingsScreen = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-8 flex justify-between items-end">
-        <div>
-          <h1 className="text-3xl font-heading font-bold text-textPrimary">Store Settings</h1>
-          <p className="text-gray-500 mt-2">Manage your vendor profile and store information.</p>
-        </div>
-        {storeSlug && (
-          <button 
-            onClick={copyStoreLink}
-            className="bg-primary/10 text-primary font-bold px-4 py-2 rounded-lg hover:bg-primary/20 transition-colors"
-          >
-            Copy Personal Link
-          </button>
-        )}
+      <div className="mb-8">
+        <h1 className="text-3xl font-heading font-bold text-textPrimary">Store Settings</h1>
+        <p className="text-gray-500 mt-2">Manage your vendor profile and store information.</p>
       </div>
 
       <div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 overflow-hidden">
@@ -130,7 +120,6 @@ const SettingsScreen = () => {
           <div>
             <h2 className="text-xl font-bold text-gray-800">{storeName || 'Your Store'}</h2>
             <p className="text-sm text-gray-500">{email}</p>
-            {storeSlug && <p className="text-xs text-primary mt-1">{getStoreUrl(storeSlug).replace(/^https?:\/\//, '')}</p>}
           </div>
         </div>
 
@@ -143,7 +132,7 @@ const SettingsScreen = () => {
             <div>
               <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <Store size={20} className="text-primary" />
-                About Page Info (Public Profile)
+                Store Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -154,80 +143,6 @@ const SettingsScreen = () => {
                     className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
                     value={storeName}
                     onChange={(e) => setStoreName(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Tagline (Short bio)</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
-                    value={tagline}
-                    onChange={(e) => setTagline(e.target.value)}
-                    placeholder="e.g. Best organic beauty products"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Contact Phone</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+1234567890"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Location / Address</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
-                    value={locationStr}
-                    onChange={(e) => setLocationStr(e.target.value)}
-                    placeholder="e.g. Kampala, Uganda"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <hr className="border-gray-100" />
-
-            {/* Payout Information */}
-            <div>
-              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <Store size={20} className="text-primary" />
-                Payout Settings (Get Paid)
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">Enter your Mobile Money or Bank details so you can receive automatic payouts (93% of sales).</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Network / Bank</label>
-                  <select
-                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
-                    value={bankCode}
-                    onChange={(e) => setBankCode(e.target.value)}
-                  >
-                    <option value="MTN">MTN Mobile Money</option>
-                    <option value="AIRTEL">Airtel Money</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Mobile Number</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
-                    value={accountNumber}
-                    onChange={(e) => setAccountNumber(e.target.value)}
-                    placeholder="e.g. 0771234567"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Registered Name</label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
-                    value={accountName}
-                    onChange={(e) => setAccountName(e.target.value)}
-                    placeholder="e.g. Jane Doe"
                   />
                 </div>
               </div>

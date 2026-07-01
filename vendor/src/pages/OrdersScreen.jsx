@@ -11,7 +11,7 @@ const OrdersScreen = () => {
       const vendorInfoStr = localStorage.getItem('vendorInfo');
       if (!vendorInfoStr) throw new Error('Not logged in');
       const vendorInfo = JSON.parse(vendorInfoStr);
-      
+
       const config = {
         headers: { Authorization: `Bearer ${vendorInfo.token}` },
       };
@@ -22,27 +22,6 @@ const OrdersScreen = () => {
     } catch (error) {
       console.error('Failed to fetch vendor orders', error);
       setLoading(false);
-    }
-  };
-
-  const deliverHandler = async (orderId) => {
-    try {
-      setLoading(true);
-      const vendorInfoStr = localStorage.getItem('vendorInfo');
-      const vendorInfo = JSON.parse(vendorInfoStr);
-      
-      const config = {
-        headers: { Authorization: `Bearer ${vendorInfo.token}` },
-      };
-
-      await axios.put(`/api/orders/${orderId}/deliver`, {}, config);
-      
-      // Refresh orders
-      fetchOrders();
-    } catch (error) {
-      console.error('Failed to mark order as shipped', error);
-      setLoading(false);
-      alert('Failed to mark as shipped. Please try again.');
     }
   };
 
@@ -86,7 +65,7 @@ const OrdersScreen = () => {
                   // Find items that belong to the vendor
                   const vendorInfo = JSON.parse(localStorage.getItem('vendorInfo'));
                   const vendorItems = order.orderItems.filter(item => item.product && item.product.vendor === vendorInfo._id);
-                  
+
                   return (
                     <tr key={order._id} className="hover:bg-gray-50/50 transition-colors group">
                       <td className="py-5 px-6">
@@ -108,7 +87,7 @@ const OrdersScreen = () => {
                         <div className="space-y-1.5">
                           {vendorItems.map((item, idx) => (
                             <div key={idx} className="flex items-center gap-2 text-sm text-gray-700">
-                              <span className="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md text-xs">{item.qty}x</span> 
+                              <span className="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md text-xs">{item.qty}x</span>
                               <span className="font-medium line-clamp-1">{item.name}</span>
                             </div>
                           ))}
@@ -124,14 +103,9 @@ const OrdersScreen = () => {
                       </td>
                       <td className="py-5 px-6">
                         {order.isDelivered ? (
-                          <span className="bg-green-50 border border-green-100 text-green-700 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm">Shipped</span>
+                          <span className="bg-green-50 border border-green-100 text-green-700 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm">Delivered</span>
                         ) : order.isPaid ? (
-                          <button 
-                            onClick={() => deliverHandler(order._id)}
-                            className="bg-primary text-white hover:bg-primary/90 px-4 py-2 rounded-lg text-xs font-extrabold uppercase tracking-wider shadow-md transition-all active:scale-95"
-                          >
-                            Mark as Shipped
-                          </button>
+                          <span className="bg-blue-50 border border-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm">To Ship</span>
                         ) : (
                           <span className="bg-red-50 border border-red-100 text-red-600 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm">Unpaid</span>
                         )}

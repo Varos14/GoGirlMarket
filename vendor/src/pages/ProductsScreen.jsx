@@ -13,23 +13,21 @@ const ProductsScreen = () => {
   const [category, setCategory] = useState('');
   const [brand, setBrand] = useState('');
   const [countInStock, setCountInStock] = useState('');
-  
+
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  const [importing, setImporting] = useState(false);
 
   const fetchProducts = async () => {
     try {
       const vendorInfoStr = localStorage.getItem('vendorInfo');
       if (!vendorInfoStr) throw new Error('Not logged in');
       const vendorInfo = JSON.parse(vendorInfoStr);
-      
+
       const config = {
         headers: { Authorization: `Bearer ${vendorInfo.token}` },
       };
@@ -46,37 +44,6 @@ const ProductsScreen = () => {
   useEffect(() => {
     fetchProducts();
   }, []);
-
-  const uploadCSVHandler = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-    setImporting(true);
-    setError('');
-    setSuccess('');
-
-    try {
-      const vendorInfo = JSON.parse(localStorage.getItem('vendorInfo'));
-      const config = {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${vendorInfo.token}`,
-        },
-      };
-
-      const { data } = await axios.post('/api/products/bulk', formData, config);
-      setSuccess(data.message);
-      setImporting(false);
-      fetchProducts(); // Refresh list
-    } catch (error) {
-      console.error(error);
-      setImporting(false);
-      setError(error.response?.data?.message || 'CSV import failed');
-    }
-    e.target.value = null; // Reset file input
-  };
 
   const deleteHandler = async (id) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
@@ -145,10 +112,10 @@ const ProductsScreen = () => {
       };
 
       await axios.post('/api/products', productData, config);
-      
+
       setLoading(false);
       setSuccess('Product created successfully!');
-      
+
       // Reset form
       setName('');
       setPrice('');
@@ -158,7 +125,7 @@ const ProductsScreen = () => {
       setCountInStock('');
       setImageUrl('');
       setImageFile(null);
-      
+
       // Refresh list
       fetchProducts();
     } catch (error) {
@@ -177,13 +144,6 @@ const ProductsScreen = () => {
       <div className="flex-1">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-heading font-bold text-textPrimary">Your Products</h1>
-          <div className="flex items-center gap-4">
-            <label className="cursor-pointer bg-white border border-gray-200 text-gray-700 font-bold px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors shadow-sm flex items-center gap-2">
-              {importing ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div> : <Upload size={16} />}
-              {importing ? 'Importing...' : 'Import CSV'}
-              <input type="file" accept=".csv" className="hidden" onChange={uploadCSVHandler} disabled={importing} />
-            </label>
-          </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -226,9 +186,8 @@ const ProductsScreen = () => {
                       </td>
                       <td className="py-4 px-6 text-sm font-bold text-gray-800">UGX {product.price.toLocaleString()}</td>
                       <td className="py-4 px-6">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                          product.countInStock > 0 ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-red-50 text-red-600 border border-red-100'
-                        }`}>
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${product.countInStock > 0 ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-red-50 text-red-600 border border-red-100'
+                          }`}>
                           {product.countInStock > 0 ? `${product.countInStock} in stock` : 'Out of Stock'}
                         </span>
                       </td>
@@ -271,7 +230,7 @@ const ProductsScreen = () => {
                 placeholder="e.g. Silk Evening Dress"
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-5">
               <div>
                 <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Price (UGX)</label>
@@ -357,8 +316,8 @@ const ProductsScreen = () => {
               </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl hover:bg-gray-800 transition-colors shadow-md mt-6"
               disabled={loading || uploading || !imageUrl}
             >
