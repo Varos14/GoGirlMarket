@@ -87,12 +87,37 @@ const updateOrderToPaid = async (req, res) => {
 
       const updatedOrder = await order.save();
       
-      // Async send payment email
+      // Async send payment email to customer
       sendEmail({
         to: order.user.email, // Populated from getOrderById where this is called
         subject: `Payment Confirmed - Order ${updatedOrder._id}`,
-        html: `<h1>Payment Successful!</h1><p>We received your payment of UGX ${updatedOrder.totalPrice}. Your items will be shipped soon.</p>`
+        html: `<h1>Payment Successful!</h1><p>We received your payment of UGX ${updatedOrder.totalPrice}. The vendor(s) have been notified and your items will be shipped soon.</p>`
       });
+
+      // Async send notification emails to all unique vendors
+      try {
+        const vendorIds = [...new Set(updatedOrder.orderItems.map(item => item.product?.vendor?.toString()).filter(Boolean))];
+        const vendors = await User.find({ _id: { $in: vendorIds } });
+        
+        vendors.forEach(vendor => {
+          sendEmail({
+            to: vendor.email,
+            subject: `🎉 New Order Received! Action Required - ${updatedOrder._id}`,
+            html: `
+              <h1>You have a new paid order!</h1>
+              <p>Great news! A customer just placed and paid for an order containing your products.</p>
+              <h3>Customer Details:</h3>
+              <p><strong>Name:</strong> ${order.user.name}</p>
+              <p><strong>Email:</strong> ${order.user.email}</p>
+              <p><strong>Delivery Address:</strong> ${order.shippingAddress.address}, ${order.shippingAddress.city}</p>
+              <br/>
+              <p>Please log into your Vendor Dashboard to prepare this order for dispatch!</p>
+            `
+          });
+        });
+      } catch (err) {
+        console.error("Error sending vendor emails:", err);
+      }
 
       res.json(updatedOrder);
     } else {
@@ -231,8 +256,8 @@ const updateOrderToDelivered = async (req, res) => {
 
       sendEmail({
         to: updatedOrder.user.email,
-        subject: `Order Delivered - ${updatedOrder._id}`,
-        html: `<h1>Your Order is Delivered!</h1><p>Hi ${updatedOrder.user.name}, your GoGirl Market order has been marked as delivered. Enjoy your items!</p>`
+        subject: `Order Shipped / Delivered - ${updatedOrder._id}`,
+        html: `<h1>Your Order is on the way!</h1><p>Hi ${updatedOrder.user.name}, the vendor has successfully dispatched your items. They should arrive shortly!</p>`
       });
 
       res.json(updatedOrder);
