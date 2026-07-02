@@ -22,7 +22,13 @@ const PlaceOrderScreen = () => {
   const itemsPrice = addDecimals(
     cart.cartItems.reduce((acc, item) => acc + item.price * item.qty, 0)
   );
-  const shippingPrice = itemsPrice > 100000 ? 0 : 5000;
+  
+  // Calculate unique vendors in the cart
+  const uniqueVendors = [...new Set(cart.cartItems.map(item => item.vendor).filter(Boolean))];
+  const numVendors = uniqueVendors.length > 0 ? uniqueVendors.length : 1; // Default to 1 if missing for some reason
+
+  const shippingPrice = itemsPrice > 100000 ? 0 : 5000 * numVendors; // 5000 UGX per vendor
+  
   const taxPrice = addDecimals(Number((0.15 * itemsPrice).toFixed(0))); // 15% tax
   const totalPrice = (
     Number(itemsPrice) +
@@ -114,10 +120,10 @@ const PlaceOrderScreen = () => {
                 <span className="text-gray-600">Items</span>
                 <span className="font-semibold">UGX {Number(itemsPrice).toLocaleString()}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Shipping</span>
-                <span className="font-semibold">UGX {Number(shippingPrice).toLocaleString()}</span>
-              </div>
+                <div className="flex justify-between text-gray-600 mb-2">
+                  <span>Shipping ({numVendors} vendor{numVendors > 1 ? 's' : ''})</span>
+                  <span className="font-medium">UGX {shippingPrice.toLocaleString()}</span>
+                </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Tax</span>
                 <span className="font-semibold">UGX {Number(taxPrice).toLocaleString()}</span>

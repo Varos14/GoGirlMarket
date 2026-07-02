@@ -64,14 +64,31 @@ const orderSchema = new mongoose.Schema(
     paidAt: {
       type: Date,
     },
-    isDelivered: {
-      type: Boolean,
-      required: true,
-      default: false,
-    },
-    deliveredAt: {
-      type: Date,
-    },
+    vendorOrders: [
+      {
+        vendor: {
+          type: mongoose.Schema.Types.ObjectId,
+          required: true,
+          ref: 'User',
+        },
+        items: [
+          {
+            name: { type: String, required: true },
+            qty: { type: Number, required: true },
+            image: { type: String },
+            price: { type: Number, required: true },
+            product: {
+              type: mongoose.Schema.Types.ObjectId,
+              required: true,
+              ref: 'Product',
+            },
+          }
+        ],
+        shippingPrice: { type: Number, default: 0.0 },
+        isDelivered: { type: Boolean, default: false },
+        deliveredAt: { type: Date },
+      }
+    ],
   },
   {
     timestamps: true,

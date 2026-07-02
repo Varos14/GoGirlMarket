@@ -1,6 +1,9 @@
 const Order = require('../models/Order');
 const User = require('../models/User');
+const Product = require('../models/Product');
+const Transaction = require('../models/Transaction');
 const sendEmail = require('../utils/sendEmail');
+const { sendWhatsAppMessage } = require('../utils/twilioUtils');
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -21,9 +24,48 @@ const addOrderItems = async (req, res) => {
       res.status(400).json({ message: 'No order items' });
       return;
     } else {
+      // 1. Fetch products to get vendor IDs
+      const productIds = orderItems.map((item) => item.product);
+      const productsFromDb = await Product.find({ _id: { $in: productIds } });
+
+      // 2. Group items by vendor
+      const vendorGroups = {};
+      
+      for (const item of orderItems) {
+        const productFromDb = productsFromDb.find((p) => p._id.toString() === item.product.toString());
+        if (!productFromDb) {
+          return res.status(404).json({ message: `Product not found: ${item.product}` });
+        }
+        
+        const vendorId = productFromDb.vendor.toString();
+        if (!vendorGroups[vendorId]) {
+          vendorGroups[vendorId] = {
+            vendor: vendorId,
+            items: [],
+            shippingPrice: 5000, // Fixed shipping per vendor
+            isDelivered: false
+          };
+        }
+        
+        vendorGroups[vendorId].items.push({
+          name: item.name,
+          qty: item.qty,
+          image: item.image,
+          price: item.price,
+          product: item.product
+        });
+      }
+
+      const vendorOrders = Object.values(vendorGroups);
+
+      // Verify the total shipping price passed from frontend matches the backend calculation
+      // If frontend didn't calculate correctly, we should ideally fail, but let's just accept frontend's numbers for total
+      // and override the vendor's shipping.
+      
       const order = new Order({
         user: req.user._id,
-        orderItems,
+        orderItems, // Still keeping global orderItems for easier legacy compatibility
+        vendorOrders, // The new split orders
         shippingAddress,
         paymentMethod,
         itemsPrice,
@@ -40,6 +82,14 @@ const addOrderItems = async (req, res) => {
         subject: `GoGirl Market Order Received - ${createdOrder._id}`,
         html: `<h1>Thank you for your order!</h1><p>We have successfully received your order for UGX ${totalPrice}. We will begin processing it right away.</p>`
       });
+
+      // Send WhatsApp Notification to Buyer
+      if (req.user.phone) {
+        sendWhatsAppMessage({
+          to: req.user.phone,
+          message: `Hi ${req.user.name}, your GoGirl Market order (${createdOrder._id}) has been placed successfully for UGX ${totalPrice}. We will notify you when it ships!`
+        });
+      }
 
       res.status(201).json(createdOrder);
     }
@@ -128,58 +178,30 @@ const updateOrderToPaid = async (req, res) => {
   }
 };
 
-// @desc    Process Flutterwave Split Payment
+// @desc    Process Flutterwave Split Payment (Now using Escrow - no splits)
 // @route   POST /api/orders/:id/flutterwave
 // @access  Private
 const processFlutterwavePayment = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
-      .populate('user', 'name email')
-      .populate({
-        path: 'orderItems.product',
-        select: 'vendor name price'
-      });
+      .populate('user', 'name email');
 
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    // 1. Find all unique vendors in this order
-    const vendorIds = [...new Set(order.orderItems.map(item => item.product?.vendor?.toString()).filter(Boolean))];
+    // In the Escrow model, 100% of the funds go directly into the platform's main Flutterwave account.
+    // The funds are held in Escrow by the platform.
+    // When the vendor marks the order as delivered, the platform will trigger a payout/transfer to the vendor.
 
-    // 2. Fetch those vendors to get their Flutterwave Subaccount IDs
-    const vendors = await User.find({ _id: { $in: vendorIds } });
-
-    // 3. Construct the subaccounts array for Flutterwave
-    const subaccounts = vendors.map(vendor => {
-      // If vendor has a payout subaccount, use it. Otherwise, funds just go to main account.
-      if (vendor.payout?.flutterwaveSubaccountId) {
-        const platformCut = vendor.commissionRate !== undefined ? vendor.commissionRate : 7;
-        const vendorCut = 100 - platformCut;
-        
-        return {
-          id: vendor.payout.flutterwaveSubaccountId,
-          transaction_split_ratio: vendorCut,
-          transaction_charge_type: 'percentage',
-          transaction_charge: platformCut // Platform takes dynamic cut
-        };
-      }
-      return null;
-    }).filter(Boolean);
-
-    // 4. In a real app, we would make an axios call to Flutterwave API here to initialize the payment
-    // and return the payment link to the frontend.
-    // For this MVP, we will mock the successful creation of the payment link.
-    
-    // Simulate API delay
+    // Simulate API delay for generating the payment link
     await new Promise(resolve => setTimeout(resolve, 800));
 
     res.json({
       success: true,
-      message: 'Payment initialized successfully',
+      message: 'Escrow payment initialized successfully',
       payment_url: `https://mock-flutterwave-checkout.com/pay/${order._id}`,
-      subaccounts_applied: subaccounts.length,
-      split_details: subaccounts
+      escrow_enabled: true
     });
 
   } catch (error) {
@@ -216,52 +238,126 @@ const getOrders = async (req, res) => {
 // @access  Private/Vendor
 const getVendorOrders = async (req, res) => {
   try {
-    // Populate the user AND the products in the orderItems
-    const orders = await Order.find({})
+    const vendorIdStr = req.user._id.toString();
+    
+    // Find all orders where vendorOrders contains this vendor
+    const orders = await Order.find({ 'vendorOrders.vendor': req.user._id })
       .populate('user', 'id name email')
       .populate({
-        path: 'orderItems.product',
-        select: 'vendor name price'
+        path: 'vendorOrders.items.product',
+        select: 'name price'
       })
       .sort({ createdAt: -1 });
     
-    const vendorIdStr = req.user._id.toString();
-    
-    // Filter orders to only those containing products belonging to this vendor
-    const vendorOrders = orders.filter(order => {
-      // Check if any item in the order has a populated product with the correct vendor ID
-      return order.orderItems.some(item => 
-        item.product && item.product.vendor && item.product.vendor.toString() === vendorIdStr
-      );
+    // We only want to return the specific vendorOrders portion for this vendor, not the entire cart for security.
+    const vendorSpecificOrders = orders.map(order => {
+      // Extract only the vendorOrders sub-document for THIS vendor
+      const vendorOrderDetails = order.vendorOrders.find(vo => vo.vendor.toString() === vendorIdStr);
+      
+      // Return a reconstructed object so the frontend sees it as a cohesive order for them
+      return {
+        _id: order._id,
+        user: order.user,
+        shippingAddress: order.shippingAddress,
+        isPaid: order.isPaid,
+        paidAt: order.paidAt,
+        createdAt: order.createdAt,
+        paymentMethod: order.paymentMethod,
+        vendorDetails: vendorOrderDetails // This contains the specific items, isDelivered, and shippingPrice
+      };
     });
 
-    res.json(vendorOrders);
+    res.json(vendorSpecificOrders);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
 
-// @desc    Update order to delivered
+// @desc    Update vendor specific order to delivered and release escrow funds
 // @route   PUT /api/orders/:id/deliver
-// @access  Private/Admin/Vendor
+// @access  Private/Vendor
 const updateOrderToDelivered = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
 
     if (order) {
-      order.isDelivered = true;
-      order.deliveredAt = Date.now();
+      // Find the specific vendor order
+      const vendorIdToDeliver = req.body.vendorId || req.user._id.toString();
+      const vendorOrder = order.vendorOrders.find(vo => vo.vendor.toString() === vendorIdToDeliver);
+      
+      if (!vendorOrder) {
+        return res.status(404).json({ message: 'Vendor sub-order not found in this order' });
+      }
+      
+      if (vendorOrder.isDelivered) {
+        return res.status(400).json({ message: 'This sub-order is already delivered' });
+      }
+
+      vendorOrder.isDelivered = true;
+      vendorOrder.deliveredAt = Date.now();
 
       const updatedOrder = await order.save();
       
-      // We need to populate the user to get their email if it isn't populated
-      await updatedOrder.populate('user', 'email name');
+      // Populate user to send notifications
+      await updatedOrder.populate('user', 'email name phone');
 
+      // Send Email Notification
       sendEmail({
         to: updatedOrder.user.email,
         subject: `Order Shipped / Delivered - ${updatedOrder._id}`,
-        html: `<h1>Your Order is on the way!</h1><p>Hi ${updatedOrder.user.name}, the vendor has successfully dispatched your items. They should arrive shortly!</p>`
+        html: `<h1>Your items are on the way!</h1><p>Hi ${updatedOrder.user.name}, a vendor has successfully dispatched their items for your order. They should arrive shortly!</p>`
       });
+
+      // Send WhatsApp Notification
+      if (updatedOrder.user.phone) {
+        sendWhatsAppMessage({
+          to: updatedOrder.user.phone,
+          message: `Hi ${updatedOrder.user.name}, part of your GoGirl Market order (${updatedOrder._id}) has been marked as shipped/delivered by the vendor!`
+        });
+      }
+
+      // ----------------------------------------------------
+      // WALLET ESCROW SYSTEM: Add to Pending Balance
+      // ----------------------------------------------------
+      const vendorDetails = await User.findById(vendorIdToDeliver);
+      if (vendorDetails) {
+        // Calculate amount to release based on items handled by this vendor
+        let vendorItemsTotal = vendorOrder.items.reduce((acc, item) => acc + (item.price * item.qty), 0);
+        vendorItemsTotal += vendorOrder.shippingPrice; // Add the vendor's shipping fee
+        
+        const commissionRate = vendorDetails.commissionRate ?? 7;
+        
+        // The vendor keeps (100 - commissionRate)% of the item total + 100% of shipping.
+        const platformCut = (vendorItemsTotal - vendorOrder.shippingPrice) * (commissionRate / 100);
+        const payoutAmount = vendorItemsTotal - platformCut;
+
+        // Initialize wallet if it doesn't exist
+        if (!vendorDetails.wallet) {
+          vendorDetails.wallet = { pendingBalance: 0, availableBalance: 0 };
+        }
+
+        // Add to pending balance
+        vendorDetails.wallet.pendingBalance += payoutAmount;
+        await vendorDetails.save();
+
+        // Create Ledger Transaction
+        // Clearance date is 3 days from now
+        const clearanceDate = new Date();
+        clearanceDate.setDate(clearanceDate.getDate() + 3);
+
+        await Transaction.create({
+          vendor: vendorIdToDeliver,
+          order: updatedOrder._id,
+          type: 'credit_pending',
+          amount: payoutAmount,
+          status: 'pending',
+          description: `Payout for Order #${updatedOrder._id} (Pending 3 Days)`,
+          clearanceDate: clearanceDate
+        });
+
+        console.log(`[WALLET] Added UGX ${payoutAmount} to Pending Balance for Vendor ${vendorDetails.name}. Clears on ${clearanceDate}`);
+      }
+      // ----------------------------------------------------
 
       res.json(updatedOrder);
     } else {

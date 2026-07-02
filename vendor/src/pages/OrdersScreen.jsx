@@ -25,6 +25,24 @@ const OrdersScreen = () => {
     }
   };
 
+  const markAsDelivered = async (orderId) => {
+    try {
+      const vendorInfoStr = localStorage.getItem('vendorInfo');
+      if (!vendorInfoStr) return;
+      const vendorInfo = JSON.parse(vendorInfoStr);
+
+      const config = {
+        headers: { Authorization: `Bearer ${vendorInfo.token}` },
+      };
+
+      await axios.put(`/api/orders/${orderId}/deliver`, {}, config);
+      fetchOrders(); // Refresh the list
+    } catch (error) {
+      console.error('Failed to mark delivered', error);
+      alert('Error marking order as delivered. Check console.');
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -62,9 +80,8 @@ const OrdersScreen = () => {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {orders.map(order => {
-                  // Find items that belong to the vendor
-                  const vendorInfo = JSON.parse(localStorage.getItem('vendorInfo'));
-                  const vendorItems = order.orderItems.filter(item => item.product && item.product.vendor === vendorInfo._id);
+                  if (!order.vendorDetails) return null; // Safety check
+                  const vendorItems = order.vendorDetails.items;
 
                   return (
                     <tr key={order._id} className="hover:bg-gray-50/50 transition-colors group">
@@ -94,18 +111,29 @@ const OrdersScreen = () => {
                         </div>
                       </td>
                       <td className="py-5 px-6">
-                        <div className="flex items-start gap-2 bg-gray-50 p-2.5 rounded-lg border border-gray-100 w-max max-w-xs">
-                          <MapPin size={16} className="text-gray-400 mt-0.5 flex-shrink-0" />
-                          <p className="text-xs font-medium text-gray-600 line-clamp-2">
-                            {order.shippingAddress.address}, {order.shippingAddress.city}
-                          </p>
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-start gap-2 bg-gray-50 p-2.5 rounded-lg border border-gray-100 w-max max-w-xs">
+                            <MapPin size={16} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs font-medium text-gray-600 line-clamp-2">
+                              {order.shippingAddress.address}, {order.shippingAddress.city}
+                            </p>
+                          </div>
+                          <span className="text-xs font-bold text-gray-500">Fee: UGX {order.vendorDetails.shippingPrice?.toLocaleString() || '0'}</span>
                         </div>
                       </td>
                       <td className="py-5 px-6">
-                        {order.isDelivered ? (
+                        {order.vendorDetails.isDelivered ? (
                           <span className="bg-green-50 border border-green-100 text-green-700 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm">Delivered</span>
                         ) : order.isPaid ? (
-                          <span className="bg-blue-50 border border-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm">To Ship</span>
+                          <div className="flex flex-col gap-2">
+                            <span className="bg-blue-50 border border-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm w-max">To Ship</span>
+                            <button 
+                              onClick={() => markAsDelivered(order._id)}
+                              className="bg-gray-900 text-white text-[10px] px-3 py-1.5 font-bold rounded shadow-sm hover:bg-gray-700 transition-colors"
+                            >
+                              Mark Delivered
+                            </button>
+                          </div>
                         ) : (
                           <span className="bg-red-50 border border-red-100 text-red-600 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm">Unpaid</span>
                         )}

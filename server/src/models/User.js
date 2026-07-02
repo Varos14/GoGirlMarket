@@ -26,6 +26,12 @@ const userSchema = new mongoose.Schema({
     tiktok: { type: String, default: '' },
   },
   
+  // Wallet System (Escrow)
+  wallet: {
+    pendingBalance: { type: Number, default: 0 },
+    availableBalance: { type: Number, default: 0 },
+  },
+  
   // Payout information (Flutterwave Splits)
   payout: {
     bankCode: { type: String }, // e.g. 'MTN', 'AIRTEL'

@@ -45,6 +45,7 @@ const ProductDetailsScreen = () => {
       image: product.images && product.images.length > 0 ? product.images[0] : '',
       price: product.price,
       countInStock: product.countInStock,
+      vendor: typeof product.vendor === 'object' ? product.vendor._id : product.vendor,
       qty: Number(qty)
     }));
     navigate('/cart');

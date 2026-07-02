@@ -117,15 +117,6 @@ const OrderScreen = () => {
               {order.shippingAddress.address}, {order.shippingAddress.city},{' '}
               {order.shippingAddress.postalCode}, {order.shippingAddress.country}
             </p>
-            {order.isDelivered ? (
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded text-sm">
-                Delivered on {order.deliveredAt.substring(0, 10)}
-              </div>
-            ) : (
-              <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded text-sm">
-                Not Delivered
-              </div>
-            )}
           </div>
 
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -146,26 +137,66 @@ const OrderScreen = () => {
           </div>
 
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h2 className="text-2xl font-heading font-bold mb-4 border-b pb-2">Order Items</h2>
-            <ul className="divide-y divide-gray-100">
-              {order.orderItems.map((item, index) => (
-                <li key={index} className="py-4 flex gap-4 items-center">
-                  <div className="w-16 h-16 bg-surface rounded-md flex-shrink-0 flex items-center justify-center overflow-hidden border border-gray-100">
-                    {item.image ? (
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-xs text-gray-400">Image</span>
-                    )}
+            <h2 className="text-2xl font-heading font-bold mb-4 border-b pb-2">Order Items & Delivery Status</h2>
+            {order.vendorOrders && order.vendorOrders.length > 0 ? (
+              <div className="space-y-6">
+                {order.vendorOrders.map((vendorOrder, vIndex) => (
+                  <div key={vIndex} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div className="flex justify-between items-center mb-4 border-b border-gray-200 pb-2">
+                      <h3 className="font-bold text-gray-800">Package {vIndex + 1} <span className="text-sm font-normal text-gray-500">(Shipping: UGX {vendorOrder.shippingPrice?.toLocaleString()})</span></h3>
+                      {vendorOrder.isDelivered ? (
+                        <span className="bg-green-100 border border-green-400 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+                          Delivered on {vendorOrder.deliveredAt?.substring(0, 10)}
+                        </span>
+                      ) : (
+                        <span className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+                          Processing
+                        </span>
+                      )}
+                    </div>
+                    <ul className="divide-y divide-gray-200 bg-white rounded shadow-sm px-4">
+                      {vendorOrder.items.map((item, index) => (
+                        <li key={index} className="py-4 flex gap-4 items-center">
+                          <div className="w-16 h-16 bg-surface rounded-md flex-shrink-0 flex items-center justify-center overflow-hidden border border-gray-100">
+                            {item.image ? (
+                              <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-xs text-gray-400">Image</span>
+                            )}
+                          </div>
+                          <Link to={`/product/${item.product}`} className="flex-grow font-semibold hover:text-primary">
+                            {item.name}
+                          </Link>
+                          <div className="font-bold text-gray-700 whitespace-nowrap">
+                            {item.qty} x UGX {item.price.toLocaleString()} = UGX {(item.qty * item.price).toLocaleString()}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <Link to={`/product/${item.product}`} className="flex-grow font-semibold hover:text-primary">
-                    {item.name}
-                  </Link>
-                  <div className="font-bold text-gray-700 whitespace-nowrap">
-                    {item.qty} x UGX {item.price.toLocaleString()} = UGX {(item.qty * item.price).toLocaleString()}
-                  </div>
-                </li>
-              ))}
-            </ul>
+                ))}
+              </div>
+            ) : (
+              <ul className="divide-y divide-gray-100">
+                {order.orderItems.map((item, index) => (
+                  <li key={index} className="py-4 flex gap-4 items-center">
+                    <div className="w-16 h-16 bg-surface rounded-md flex-shrink-0 flex items-center justify-center overflow-hidden border border-gray-100">
+                      {item.image ? (
+                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xs text-gray-400">Image</span>
+                      )}
+                    </div>
+                    <Link to={`/product/${item.product}`} className="flex-grow font-semibold hover:text-primary">
+                      {item.name}
+                    </Link>
+                    <div className="font-bold text-gray-700 whitespace-nowrap">
+                      {item.qty} x UGX {item.price.toLocaleString()} = UGX {(item.qty * item.price).toLocaleString()}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 
