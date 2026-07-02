@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
-import { BadgeCheck, Instagram, MessageCircle, MapPin, Calendar, Mail, Box } from 'lucide-react';
+import { BadgeCheck, Camera, MessageCircle, MapPin, Calendar, Mail, Box } from 'lucide-react';
 
 const VendorStoreScreen = () => {
   const { slug } = useParams();
@@ -98,7 +98,7 @@ const VendorStoreScreen = () => {
               )}
               {vendor.socialLinks?.instagram && (
                 <a href={vendor.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 bg-black/20 hover:bg-black/40 transition-colors px-3 py-1.5 rounded-full text-white cursor-pointer">
-                  <Instagram size={16} /> Instagram
+                  <Camera size={16} /> Instagram
                 </a>
               )}
               {vendor.socialLinks?.tiktok && (
