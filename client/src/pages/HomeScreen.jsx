@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '../store/productSlice';
 import { Link, useNavigate } from 'react-router-dom';
 import { addToCart } from '../store/cartSlice';
+import { Star } from 'lucide-react';
+import axios from 'axios';
 
 const HomeScreen = () => {
   const dispatch = useDispatch();
@@ -11,8 +13,24 @@ const HomeScreen = () => {
   const productList = useSelector((state) => state.products);
   const { loading, error, products } = productList;
 
+  const [featuredProducts, setFeaturedProducts] = React.useState([]);
+  const [loadingFeatured, setLoadingFeatured] = React.useState(true);
+
   useEffect(() => {
     dispatch(fetchProducts());
+    
+    // Fetch featured products
+    const fetchFeatured = async () => {
+      try {
+        const { data } = await axios.get('/api/products?featured=true');
+        setFeaturedProducts(data.products || []);
+      } catch (err) {
+        console.error('Error fetching featured products', err);
+      } finally {
+        setLoadingFeatured(false);
+      }
+    };
+    fetchFeatured();
   }, [dispatch]);
 
   const addToCartHandler = (product) => {
@@ -63,7 +81,56 @@ const HomeScreen = () => {
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {/* Featured Products Section */}
+      {!loadingFeatured && featuredProducts.length > 0 && (
+        <div className="bg-amber-50/50 py-16 border-b border-amber-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="h-10 w-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-600">
+                <Star size={20} fill="currentColor" />
+              </div>
+              <h2 className="text-3xl font-heading font-bold text-gray-900">Featured Premium</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredProducts.slice(0, 4).map((product) => (
+                <div key={product._id} className="bg-white rounded-xl border border-amber-100 shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 relative">
+                  <div className="absolute top-3 left-3 z-20">
+                    <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider shadow-sm flex items-center gap-1">
+                      <Star size={10} fill="currentColor" /> Featured
+                    </span>
+                  </div>
+                  <Link to={`/product/${product._id}`}>
+                    <div className="h-64 bg-surface flex items-center justify-center relative group">
+                      <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
+                      <div className="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="bg-white text-textPrimary px-4 py-2 font-bold rounded-md shadow-md">View Details</span>
+                       </div>
+                    </div>
+                  </Link>
+                  <div className="p-5 flex flex-col justify-between h-40">
+                    <div>
+                      <h3 className="font-heading font-bold text-lg text-gray-900 line-clamp-1">{product.name}</h3>
+                      <p className="text-sm text-gray-500 mb-2 font-medium">{product.vendor?.storeName || 'Premium Boutique'}</p>
+                    </div>
+                    <div className="flex justify-between items-center mt-auto">
+                      <span className="font-bold text-primary text-lg">UGX {product.price.toLocaleString()}</span>
+                      <button 
+                        onClick={() => addToCartHandler(product)}
+                        className="text-sm bg-gray-900 hover:bg-primary text-white font-bold py-1.5 px-4 rounded-md transition-colors"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <h2 className="text-3xl font-heading font-bold text-textPrimary mb-8">Latest Fashion & Beauty</h2>
         
         {loading ? (

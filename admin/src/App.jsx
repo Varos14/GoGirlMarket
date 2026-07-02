@@ -1,10 +1,11 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Store, LogOut, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Users, Store, LogOut, ClipboardList, Package } from 'lucide-react';
 import DashboardScreen from './pages/DashboardScreen';
 import UsersScreen from './pages/UsersScreen';
 import OrdersScreen from './pages/OrdersScreen';
 import VendorsScreen from './pages/VendorsScreen';
+import ProductsScreen from './pages/ProductsScreen';
 import LoginScreen from './pages/LoginScreen';
 import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
@@ -42,6 +43,10 @@ function AdminLayout() {
           <Link to="/orders" className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${location.pathname === '/orders' ? 'bg-primary/20 text-primary shadow-[inset_4px_0_0_0_#E91E63]' : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'}`}>
             <ClipboardList size={20} className={location.pathname === '/orders' ? 'text-primary' : ''} />
             Orders
+          </Link>
+          <Link to="/products" className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${location.pathname === '/products' ? 'bg-primary/20 text-primary shadow-[inset_4px_0_0_0_#E91E63]' : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'}`}>
+            <Package size={20} className={location.pathname === '/products' ? 'text-primary' : ''} />
+            Products
           </Link>
         </div>
         
@@ -88,6 +93,7 @@ function AdminLayout() {
             <Route path="/" element={<DashboardScreen />} />
             <Route path="/users" element={<UsersScreen />} />
             <Route path="/vendors" element={<VendorsScreen />} />
+            <Route path="/products" element={<ProductsScreen />} />
             <Route path="/orders" element={<OrdersScreen />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
@@ -111,6 +117,10 @@ function AdminLayout() {
         <Link to="/orders" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/orders' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
           <ClipboardList size={20} />
           <span className="text-[10px] mt-1 font-bold tracking-wide">Orders</span>
+        </Link>
+        <Link to="/products" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/products' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
+          <Package size={20} />
+          <span className="text-[10px] mt-1 font-bold tracking-wide">Products</span>
         </Link>
       </nav>
     </div>

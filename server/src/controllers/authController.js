@@ -64,6 +64,9 @@ const loginUser = async (req, res) => {
         phone: user.phone,
         location: user.location,
         payout: user.payout,
+        isVerified: user.isVerified,
+        commissionRate: user.commissionRate,
+        socialLinks: user.socialLinks,
         token: generateToken(user._id),
       });
     } else {
@@ -92,6 +95,9 @@ const getUserProfile = async (req, res) => {
         phone: user.phone,
         location: user.location,
         payout: user.payout,
+        isVerified: user.isVerified,
+        commissionRate: user.commissionRate,
+        socialLinks: user.socialLinks,
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -127,6 +133,13 @@ const updateUserProfile = async (req, res) => {
             flutterwaveSubaccountId: `RS_${Math.floor(Math.random() * 90000) + 10000}_${Date.now().toString().slice(-4)}`
           };
         }
+        
+        if (req.body.socialLinks) {
+          user.socialLinks = {
+            instagram: req.body.socialLinks.instagram || user.socialLinks?.instagram || '',
+            tiktok: req.body.socialLinks.tiktok || user.socialLinks?.tiktok || '',
+          };
+        }
       }
 
       if (req.body.password) {
@@ -146,6 +159,9 @@ const updateUserProfile = async (req, res) => {
         phone: updatedUser.phone,
         location: updatedUser.location,
         payout: updatedUser.payout,
+        isVerified: updatedUser.isVerified,
+        commissionRate: updatedUser.commissionRate,
+        socialLinks: updatedUser.socialLinks,
         token: generateToken(updatedUser._id),
       });
     } else {

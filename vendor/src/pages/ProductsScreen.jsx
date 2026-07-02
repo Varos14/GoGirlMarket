@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { PackagePlus, Upload, Image as ImageIcon, Trash2, Edit } from 'lucide-react';
+import { PackagePlus, Upload, Image as ImageIcon, Trash2, Edit, Star } from 'lucide-react';
 
 const ProductsScreen = () => {
   const [products, setProducts] = useState([]);
@@ -180,7 +180,14 @@ const ProductsScreen = () => {
                           <img src={product.images[0]} alt={product.name} className="h-12 w-12 object-cover rounded-xl shadow-sm border border-gray-100" />
                           <div>
                             <p className="font-bold text-gray-800 text-sm line-clamp-1">{product.name}</p>
-                            <p className="text-xs text-gray-400">{product.category}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <p className="text-xs text-gray-400">{product.category}</p>
+                              {product.isFeatured && (
+                                <span className="flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wider bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded border border-amber-100">
+                                  <Star size={8} fill="currentColor" /> Featured
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </td>

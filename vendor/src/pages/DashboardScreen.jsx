@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, ShoppingBag, DollarSign, Users } from 'lucide-react';
+import { Package, ShoppingBag, DollarSign, Users, BadgeCheck } from 'lucide-react';
 import axios from 'axios';
 
 const DashboardScreen = () => {
@@ -11,21 +11,23 @@ const DashboardScreen = () => {
     recentOrders: []
   });
   const [loading, setLoading] = useState(true);
+  const [vendorInfo, setVendorInfo] = useState(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const vendorInfoStr = localStorage.getItem('vendorInfo');
         if (!vendorInfoStr) throw new Error('Not logged in');
-        const vendorInfo = JSON.parse(vendorInfoStr);
+        const parsedVendorInfo = JSON.parse(vendorInfoStr);
+        setVendorInfo(parsedVendorInfo);
 
         const config = {
-          headers: { Authorization: `Bearer ${vendorInfo.token}` },
+          headers: { Authorization: `Bearer ${parsedVendorInfo.token}` },
         };
 
         // Fetch vendor products and orders in parallel
         const [productsRes, ordersRes] = await Promise.all([
-          axios.get(`/api/products?vendor=${vendorInfo._id}`, config),
+          axios.get(`/api/products?vendor=${parsedVendorInfo._id}`, config),
           axios.get('/api/orders/vendor', config)
         ]);
 
@@ -38,7 +40,7 @@ const DashboardScreen = () => {
           .reduce((acc, order) => {
             // Find items belonging to this vendor
             const vendorItems = order.orderItems.filter(
-              item => item.product && item.product.vendor === vendorInfo._id
+              item => item.product && item.product.vendor === parsedVendorInfo._id
             );
             const orderRevenue = vendorItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
             return acc + orderRevenue;
@@ -67,7 +69,14 @@ const DashboardScreen = () => {
 
   return (
     <div>
-      <h1 className="text-3xl font-heading font-bold text-textPrimary mb-8">Dashboard Overview</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
+        <h1 className="text-3xl font-heading font-bold text-textPrimary">Dashboard Overview</h1>
+        {vendorInfo?.isVerified && (
+          <span className="flex items-center gap-1 bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold text-sm border border-blue-100 shadow-sm w-max">
+            <BadgeCheck size={16} /> Verified Vendor
+          </span>
+        )}
+      </div>
 
       {loading ? (
         <div className="flex justify-center items-center h-64">

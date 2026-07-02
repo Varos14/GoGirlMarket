@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
+import { BadgeCheck, Instagram, MessageCircle } from 'lucide-react';
 
 const VendorStoreScreen = () => {
   const { slug } = useParams();
@@ -68,8 +69,11 @@ const VendorStoreScreen = () => {
             {vendor.storeName ? vendor.storeName.substring(0, 2) : vendor.name.substring(0, 2)}
           </div>
           <div className="text-center md:text-left">
-            <h1 className="text-4xl md:text-5xl font-heading font-bold mb-2">
+            <h1 className="text-4xl md:text-5xl font-heading font-bold mb-2 flex items-center gap-3">
               {vendor.storeName || vendor.name}
+              {vendor.isVerified && (
+                <BadgeCheck className="text-blue-400" size={32} title="Verified Vendor" />
+              )}
             </h1>
             {vendor.tagline && (
               <p className="text-xl text-white/90 font-medium mb-4">{vendor.tagline}</p>
@@ -91,7 +95,24 @@ const VendorStoreScreen = () => {
                   {vendor.phone}
                 </span>
               )}
+              {vendor.socialLinks?.instagram && (
+                <a href={vendor.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 bg-black/20 hover:bg-black/40 transition-colors px-3 py-1.5 rounded-full text-white cursor-pointer">
+                  <Instagram size={16} /> Instagram
+                </a>
+              )}
+              {vendor.socialLinks?.tiktok && (
+                <a href={vendor.socialLinks.tiktok} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 bg-black/20 hover:bg-black/40 transition-colors px-3 py-1.5 rounded-full text-white cursor-pointer">
+                  <MessageCircle size={16} /> TikTok
+                </a>
+              )}
             </div>
+            
+            {vendor.storeDescription && (
+              <div className="mt-6 bg-black/10 p-4 rounded-xl text-white/90 text-sm leading-relaxed max-w-2xl border border-white/10 shadow-inner">
+                <p className="font-bold text-white mb-2">About Our Store</p>
+                {vendor.storeDescription}
+              </div>
+            )}
           </div>
         </div>
       </div>

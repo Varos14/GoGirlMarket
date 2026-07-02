@@ -10,6 +10,10 @@ const SettingsScreen = () => {
   const [phone, setPhone] = useState('');
   const [locationStr, setLocationStr] = useState('');
   const [storeSlug, setStoreSlug] = useState('');
+  
+  // Social Links
+  const [instagram, setInstagram] = useState('');
+  const [tiktok, setTiktok] = useState('');
 
   // Payout fields
   const [bankCode, setBankCode] = useState('MTN');
@@ -38,6 +42,10 @@ const SettingsScreen = () => {
         setBankCode(vendorInfo.payout.bankCode || 'MTN');
         setAccountNumber(vendorInfo.payout.accountNumber || '');
         setAccountName(vendorInfo.payout.accountName || '');
+      }
+      if (vendorInfo.socialLinks) {
+        setInstagram(vendorInfo.socialLinks.instagram || '');
+        setTiktok(vendorInfo.socialLinks.tiktok || '');
       }
     }
   }, []);
@@ -81,7 +89,8 @@ const SettingsScreen = () => {
         '/api/auth/profile',
         {
           name, email, storeName, tagline, phone, location: locationStr, password,
-          payout: { bankCode, accountNumber, accountName }
+          payout: { bankCode, accountNumber, accountName },
+          socialLinks: { instagram, tiktok }
         },
         config
       );
@@ -143,6 +152,28 @@ const SettingsScreen = () => {
                     className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
                     value={storeName}
                     onChange={(e) => setStoreName(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div>
+                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Instagram Profile URL</label>
+                  <input
+                    type="url"
+                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
+                    value={instagram}
+                    onChange={(e) => setInstagram(e.target.value)}
+                    placeholder="https://instagram.com/yourstore"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">TikTok Profile URL</label>
+                  <input
+                    type="url"
+                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
+                    value={tiktok}
+                    onChange={(e) => setTiktok(e.target.value)}
+                    placeholder="https://tiktok.com/@yourstore"
                   />
                 </div>
               </div>

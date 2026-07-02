@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { getProducts, getProductById, createProduct, updateProduct, deleteProduct, createProductReview, importProductsCSV } = require('../controllers/productController');
-const { protect, vendor } = require('../middleware/authMiddleware');
+const { getProducts, getProductById, createProduct, updateProduct, deleteProduct, createProductReview, importProductsCSV, updateProductFeatured } = require('../controllers/productController');
+const { protect, vendor, admin } = require('../middleware/authMiddleware');
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -17,5 +17,7 @@ router.route('/:id')
   .delete(protect, vendor, deleteProduct);
 
 router.route('/:id/reviews').post(protect, createProductReview);
+
+router.route('/:id/featured').put(protect, admin, updateProductFeatured);
 
 module.exports = router;

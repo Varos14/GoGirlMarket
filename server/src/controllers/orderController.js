@@ -150,15 +150,18 @@ const processFlutterwavePayment = async (req, res) => {
     // 2. Fetch those vendors to get their Flutterwave Subaccount IDs
     const vendors = await User.find({ _id: { $in: vendorIds } });
 
-    // 3. Construct the subaccounts array for Flutterwave (7% commission to platform, 93% to vendor)
+    // 3. Construct the subaccounts array for Flutterwave
     const subaccounts = vendors.map(vendor => {
       // If vendor has a payout subaccount, use it. Otherwise, funds just go to main account.
       if (vendor.payout?.flutterwaveSubaccountId) {
+        const platformCut = vendor.commissionRate !== undefined ? vendor.commissionRate : 7;
+        const vendorCut = 100 - platformCut;
+        
         return {
           id: vendor.payout.flutterwaveSubaccountId,
-          transaction_split_ratio: 93,
+          transaction_split_ratio: vendorCut,
           transaction_charge_type: 'percentage',
-          transaction_charge: 7 // Platform takes 7%
+          transaction_charge: platformCut // Platform takes dynamic cut
         };
       }
       return null;

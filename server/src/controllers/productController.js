@@ -26,7 +26,10 @@ const getProducts = async (req, res) => {
   // Vendor filter
   const vendor = req.query.vendor ? { vendor: req.query.vendor } : {};
 
-  const query = { ...keyword, ...category, ...vendor };
+  // Featured filter
+  const featured = req.query.featured === 'true' ? { isFeatured: true } : {};
+
+  const query = { ...keyword, ...category, ...vendor, ...featured };
 
   let sortCriteria = { createdAt: -1 };
   if (req.query.sort === 'lowest') {
@@ -258,4 +261,23 @@ const importProductsCSV = async (req, res) => {
     });
 };
 
-module.exports = { getProducts, getProductById, createProduct, updateProduct, deleteProduct, createProductReview, importProductsCSV };
+// @desc    Update product featured status (Admin only)
+// @route   PUT /api/products/:id/featured
+// @access  Private/Admin
+const updateProductFeatured = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (product) {
+      product.isFeatured = req.body.isFeatured;
+      const updatedProduct = await product.save();
+      res.json(updatedProduct);
+    } else {
+      res.status(404).json({ message: 'Product not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+module.exports = { getProducts, getProductById, createProduct, updateProduct, deleteProduct, createProductReview, importProductsCSV, updateProductFeatured };

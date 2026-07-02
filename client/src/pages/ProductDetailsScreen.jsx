@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchProductDetails, createProductReview, productReviewCreateReset } from '../store/productSlice';
 import { addToCart } from '../store/cartSlice';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { BadgeCheck } from 'lucide-react';
 
 const ProductDetailsScreen = () => {
   const { id } = useParams();
@@ -100,7 +101,10 @@ const ProductDetailsScreen = () => {
               <div className="border-t border-b border-gray-100 py-6 mb-8 space-y-4">
                 <div className="flex justify-between items-center text-lg">
                   <span className="font-semibold text-gray-700">Sold By:</span>
-                  <span className="text-secondary font-bold hover:underline cursor-pointer">{product.vendor?.storeName || 'Vendor'}</span>
+                  <Link to={`/store/${product.vendor?.storeSlug || product.vendor?._id}`} className="text-secondary font-bold hover:underline cursor-pointer flex items-center gap-1.5">
+                    {product.vendor?.storeName || product.vendor?.name || 'Vendor'}
+                    {product.vendor?.isVerified && <BadgeCheck size={16} className="text-blue-500" title="Verified Vendor" />}
+                  </Link>
                 </div>
                 <div className="flex justify-between items-center text-lg">
                   <span className="font-semibold text-gray-700">Brand:</span>

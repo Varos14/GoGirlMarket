@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import CheckoutSteps from '../components/CheckoutSteps';
 import { createOrder, orderCreateReset } from '../store/orderSlice';
 import { clearCartItems } from '../store/cartSlice';
+import { ShieldCheck } from 'lucide-react';
 
 const PlaceOrderScreen = () => {
   const navigate = useNavigate();
@@ -129,7 +130,7 @@ const PlaceOrderScreen = () => {
 
             <button
               type="button"
-              className="w-full btn-primary py-3 text-lg flex justify-center items-center"
+              className="w-full btn-primary py-3 text-lg flex justify-center items-center mb-4"
               disabled={cart.cartItems.length === 0 || loading}
               onClick={placeOrderHandler}
             >
@@ -139,6 +140,14 @@ const PlaceOrderScreen = () => {
                 'Place Order'
               )}
             </button>
+            
+            <div className="flex items-center justify-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg border border-green-100">
+              <ShieldCheck size={20} />
+              <div className="text-xs">
+                <p className="font-bold uppercase tracking-wider">Secure Payment</p>
+                <p className="text-green-700">Protected by Flutterwave</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

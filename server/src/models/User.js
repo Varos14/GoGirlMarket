@@ -19,6 +19,12 @@ const userSchema = new mongoose.Schema({
   phone: { type: String },
   location: { type: String },
   isApproved: { type: Boolean, default: false }, // For vendors
+  isVerified: { type: Boolean, default: false },
+  commissionRate: { type: Number, default: 7 },
+  socialLinks: {
+    instagram: { type: String, default: '' },
+    tiktok: { type: String, default: '' },
+  },
   
   // Payout information (Flutterwave Splits)
   payout: {

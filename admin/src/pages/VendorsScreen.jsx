@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Store, Trash2 } from 'lucide-react';
+import { Store, Trash2, BadgeCheck, Percent } from 'lucide-react';
 import axios from 'axios';
 
 const VendorsScreen = () => {
@@ -45,6 +45,35 @@ const VendorsScreen = () => {
     }
   };
 
+  const toggleVerifiedHandler = async (id, currentStatus) => {
+    try {
+      const userInfoStr = localStorage.getItem('userInfo');
+      if (!userInfoStr) throw new Error('Not logged in');
+      const userInfo = JSON.parse(userInfoStr);
+      const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+      await axios.put(`/api/users/${id}/role`, { isVerified: !currentStatus }, config);
+      fetchVendors();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update verification');
+    }
+  };
+
+  const updateCommissionHandler = async (id, rate) => {
+    const newRate = prompt('Enter new commission rate (0-100):', rate !== undefined ? rate : 7);
+    if (newRate !== null) {
+      try {
+        const userInfoStr = localStorage.getItem('userInfo');
+        if (!userInfoStr) throw new Error('Not logged in');
+        const userInfo = JSON.parse(userInfoStr);
+        const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+        await axios.put(`/api/users/${id}/role`, { commissionRate: Number(newRate) }, config);
+        fetchVendors();
+      } catch (error) {
+        alert(error.response?.data?.message || 'Failed to update commission');
+      }
+    }
+  };
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
@@ -70,13 +99,14 @@ const VendorsScreen = () => {
                   <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Store / Vendor</th>
                   <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Email</th>
                   <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Joined Date</th>
+                  <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Status / Comm.</th>
                   <th className="px-6 py-4 text-right text-[11px] font-bold text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-50">
                 {vendors.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="py-8 text-center text-gray-500 font-medium">No active vendors found.</td>
+                    <td colSpan="5" className="py-8 text-center text-gray-500 font-medium">No active vendors found.</td>
                   </tr>
                 ) : (
                   vendors.map((vendor) => (
@@ -94,7 +124,29 @@ const VendorsScreen = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">{vendor.email}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">{new Date(vendor.createdAt).toLocaleDateString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1">
+                          {vendor.isVerified ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-600">
+                              <BadgeCheck size={12} /> Verified
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-500">
+                              Unverified
+                            </span>
+                          )}
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-600">
+                            {vendor.commissionRate !== undefined ? vendor.commissionRate : 7}% Comm.
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right flex items-center justify-end gap-2">
+                        <button onClick={() => toggleVerifiedHandler(vendor._id, vendor.isVerified)} className={`p-2 rounded-md transition-all border border-transparent hover:shadow-md ${vendor.isVerified ? 'text-blue-500 hover:text-white hover:bg-blue-500' : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50'}`} title="Toggle Verified Status">
+                          <BadgeCheck size={16} />
+                        </button>
+                        <button onClick={() => updateCommissionHandler(vendor._id, vendor.commissionRate)} className="text-green-500 hover:text-white hover:bg-green-500 transition-all p-2 rounded-md border border-transparent hover:shadow-md" title="Update Commission Rate">
+                          <Percent size={16} />
+                        </button>
                         <button onClick={() => revokeVendorHandler(vendor._id)} className="text-red-500 hover:text-white hover:bg-red-500 transition-all p-2 rounded-md border border-transparent hover:shadow-md" title="Revoke Vendor Status">
                           <Trash2 size={16} />
                         </button>

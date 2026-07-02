@@ -46,6 +46,13 @@ const updateUserRole = async (req, res) => {
       user.role = req.body.role || user.role;
       user.storeName = req.body.storeName || user.storeName;
       
+      if (req.body.isVerified !== undefined) {
+        user.isVerified = req.body.isVerified;
+      }
+      if (req.body.commissionRate !== undefined) {
+        user.commissionRate = req.body.commissionRate;
+      }
+      
       const updatedUser = await user.save();
 
       res.json({
@@ -54,6 +61,8 @@ const updateUserRole = async (req, res) => {
         email: updatedUser.email,
         role: updatedUser.role,
         storeName: updatedUser.storeName,
+        isVerified: updatedUser.isVerified,
+        commissionRate: updatedUser.commissionRate,
       });
     } else {
       res.status(404).json({ message: 'User not found' });

@@ -21,6 +21,7 @@ const productSchema = new mongoose.Schema({
   reviews: [reviewSchema],
   rating: { type: Number, required: true, default: 0 },
   numReviews: { type: Number, required: true, default: 0 },
+  isFeatured: { type: Boolean, default: false },
 }, {
   timestamps: true,
 });
