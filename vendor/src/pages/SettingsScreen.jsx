@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Store, User, Lock, Save } from 'lucide-react';
+import { Store, User, Lock, Save, Copy } from 'lucide-react';
 import axios from 'axios';
 
 const SettingsScreen = () => {
@@ -116,9 +116,16 @@ const SettingsScreen = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-heading font-bold text-textPrimary">Store Settings</h1>
-        <p className="text-gray-500 mt-2">Manage your vendor profile and store information.</p>
+      <div className="mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+        <div>
+          <h1 className="text-3xl font-heading font-bold text-textPrimary">Store Settings</h1>
+          <p className="text-gray-500 mt-2">Manage your vendor profile and store information.</p>
+        </div>
+        {storeSlug && (
+          <button onClick={copyStoreLink} className="flex items-center gap-2 bg-primary/10 text-primary hover:bg-primary hover:text-white px-4 py-2 rounded-lg font-bold transition-colors shadow-sm">
+            <Copy size={18} /> Copy Store Link
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 overflow-hidden">
