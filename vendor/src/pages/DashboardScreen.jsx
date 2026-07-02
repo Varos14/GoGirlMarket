@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, ShoppingBag, DollarSign, Users, BadgeCheck } from 'lucide-react';
+import { Package, ShoppingBag, DollarSign, Users, BadgeCheck, Copy } from 'lucide-react';
 import axios from 'axios';
 
 const DashboardScreen = () => {
@@ -12,6 +12,22 @@ const DashboardScreen = () => {
   });
   const [loading, setLoading] = useState(true);
   const [vendorInfo, setVendorInfo] = useState(null);
+  const [success, setSuccess] = useState('');
+
+  const getStoreUrl = (slug) => {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return `http://localhost:5173/store/${slug}`;
+    }
+    return `https://go-girl-market-client.vercel.app/store/${slug}`;
+  };
+
+  const copyStoreLink = () => {
+    if (vendorInfo?.storeSlug) {
+      navigator.clipboard.writeText(getStoreUrl(vendorInfo.storeSlug));
+      setSuccess('Store link copied to clipboard!');
+      setTimeout(() => setSuccess(''), 3000);
+    }
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -69,14 +85,23 @@ const DashboardScreen = () => {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
-        <h1 className="text-3xl font-heading font-bold text-textPrimary">Dashboard Overview</h1>
-        {vendorInfo?.isVerified && (
-          <span className="flex items-center gap-1 bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold text-sm border border-blue-100 shadow-sm w-max">
-            <BadgeCheck size={16} /> Verified Vendor
-          </span>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <h1 className="text-3xl font-heading font-bold text-textPrimary">Dashboard Overview</h1>
+          {vendorInfo?.isVerified && (
+            <span className="flex items-center gap-1 bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold text-sm border border-blue-100 shadow-sm w-max">
+              <BadgeCheck size={16} /> Verified Vendor
+            </span>
+          )}
+        </div>
+        {vendorInfo?.storeSlug && (
+          <button onClick={copyStoreLink} className="flex items-center gap-2 bg-primary/10 text-primary hover:bg-primary hover:text-white px-4 py-2 rounded-lg font-bold transition-colors shadow-sm w-max">
+            <Copy size={18} /> Copy Store Link
+          </button>
         )}
       </div>
+
+      {success && <div className="bg-green-50 border border-green-100 text-green-600 px-4 py-3 rounded-lg mb-6 text-sm font-medium">{success}</div>}
 
       {loading ? (
         <div className="flex justify-center items-center h-64">

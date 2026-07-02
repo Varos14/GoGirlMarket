@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { PackagePlus, Upload, Image as ImageIcon, Trash2, Edit, Star } from 'lucide-react';
+import { PackagePlus, Upload, Image as ImageIcon, Trash2, Edit, Star, FileSpreadsheet } from 'lucide-react';
 
 const ProductsScreen = () => {
   const [products, setProducts] = useState([]);
@@ -21,6 +21,11 @@ const ProductsScreen = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const [csvFile, setCsvFile] = useState(null);
+  const [uploadingCsv, setUploadingCsv] = useState(false);
+  const [csvError, setCsvError] = useState('');
+  const [csvSuccess, setCsvSuccess] = useState('');
 
   const fetchProducts = async () => {
     try {
@@ -86,6 +91,41 @@ const ProductsScreen = () => {
     }
   };
 
+  const uploadCsvHandler = async (e) => {
+    e.preventDefault();
+    if (!csvFile) return;
+    
+    setUploadingCsv(true);
+    setCsvError('');
+    setCsvSuccess('');
+
+    const formData = new FormData();
+    formData.append('file', csvFile);
+
+    try {
+      const vendorInfo = JSON.parse(localStorage.getItem('vendorInfo'));
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${vendorInfo.token}`,
+        },
+      };
+
+      await axios.post('/api/products/bulk', formData, config);
+      setUploadingCsv(false);
+      setCsvSuccess('Products imported successfully!');
+      setCsvFile(null);
+      // Reset file input
+      const fileInput = document.getElementById('csv-upload');
+      if (fileInput) fileInput.value = '';
+      fetchProducts();
+    } catch (error) {
+      console.error(error);
+      setUploadingCsv(false);
+      setCsvError(error.response?.data?.message || 'CSV upload failed');
+    }
+  };
+
   const submitHandler = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -142,9 +182,38 @@ const ProductsScreen = () => {
     <div className="flex flex-col lg:flex-row gap-8">
       {/* Left Col: Product List */}
       <div className="flex-1">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <h1 className="text-3xl font-heading font-bold text-textPrimary">Your Products</h1>
+          
+          <form onSubmit={uploadCsvHandler} className="flex items-center gap-3">
+            <div className="relative">
+              <input 
+                type="file" 
+                id="csv-upload"
+                accept=".csv"
+                onChange={(e) => setCsvFile(e.target.files[0])}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+              <button 
+                type="button"
+                className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold hover:bg-gray-50 transition-colors shadow-sm text-sm"
+              >
+                <FileSpreadsheet size={16} className="text-green-600" />
+                {csvFile ? csvFile.name : 'Choose CSV'}
+              </button>
+            </div>
+            <button 
+              type="submit"
+              disabled={!csvFile || uploadingCsv}
+              className="bg-gray-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-800 transition-colors shadow-sm text-sm disabled:opacity-50"
+            >
+              {uploadingCsv ? 'Importing...' : 'Import CSV'}
+            </button>
+          </form>
         </div>
+
+        {csvError && <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm font-medium">{csvError}</div>}
+        {csvSuccess && <div className="bg-green-50 border border-green-100 text-green-600 px-4 py-3 rounded-lg mb-6 text-sm font-medium">{csvSuccess}</div>}
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           {loadingProducts ? (
