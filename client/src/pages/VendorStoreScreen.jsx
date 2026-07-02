@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
-import { BadgeCheck, Instagram, MessageCircle } from 'lucide-react';
+import { BadgeCheck, Instagram, MessageCircle, MapPin, Calendar, Mail, Box } from 'lucide-react';
 
 const VendorStoreScreen = () => {
   const { slug } = useParams();
@@ -13,6 +13,7 @@ const VendorStoreScreen = () => {
   const [storeData, setStoreData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('products');
 
   useEffect(() => {
     const fetchVendorStore = async () => {
@@ -107,51 +108,144 @@ const VendorStoreScreen = () => {
               )}
             </div>
             
-            {vendor.storeDescription && (
-              <div className="mt-6 bg-black/10 p-4 rounded-xl text-white/90 text-sm leading-relaxed max-w-2xl border border-white/10 shadow-inner">
-                <p className="font-bold text-white mb-2">About Our Store</p>
-                {vendor.storeDescription}
-              </div>
-            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs Navigation */}
+      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex gap-8">
+            <button 
+              onClick={() => setActiveTab('products')}
+              className={`py-4 font-bold border-b-2 transition-colors ${activeTab === 'products' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+            >
+              Products ({products.length})
+            </button>
+            <button 
+              onClick={() => setActiveTab('about')}
+              className={`py-4 font-bold border-b-2 transition-colors ${activeTab === 'about' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+            >
+              About Vendor
+            </button>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
-        <h2 className="text-2xl font-bold text-gray-800 mb-8 border-b pb-4">
-          All Products ({products.length})
-        </h2>
-        
-        {products.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-100">
-            <p className="text-gray-500 text-lg">This store doesn't have any products yet.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <div key={product._id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
-                <Link to={`/product/${product._id}`}>
-                  <div className="h-56 bg-surface flex items-center justify-center cursor-pointer relative group">
-                    <img src={product.images?.[0] || 'https://via.placeholder.com/800x800.png?text=No+Image'} alt={product.name} className="h-full w-full object-cover" />
-                    <div className="absolute inset-0 bg-black bg-opacity-20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="bg-white text-textPrimary px-6 py-2 font-bold rounded-md shadow-md transform translate-y-4 group-hover:translate-y-0 transition-transform">View Details</span>
+        {activeTab === 'products' ? (
+          <>
+            <h2 className="text-2xl font-bold text-gray-800 mb-8 border-b pb-4">
+              All Products
+            </h2>
+            
+            {products.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-100">
+                <p className="text-gray-500 text-lg">This store doesn't have any products yet.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {products.map((product) => (
+                  <div key={product._id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
+                    <Link to={`/product/${product._id}`}>
+                      <div className="h-56 bg-surface flex items-center justify-center cursor-pointer relative group">
+                        <img src={product.images?.[0] || 'https://via.placeholder.com/800x800.png?text=No+Image'} alt={product.name} className="h-full w-full object-cover" />
+                        <div className="absolute inset-0 bg-black bg-opacity-20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <span className="bg-white text-textPrimary px-6 py-2 font-bold rounded-md shadow-md transform translate-y-4 group-hover:translate-y-0 transition-transform">View Details</span>
+                        </div>
+                      </div>
+                    </Link>
+                    <div className="p-4 flex flex-col flex-grow">
+                      <div>
+                        <h3 className="font-heading font-semibold text-lg text-textPrimary line-clamp-1">{product.name}</h3>
+                        <p className="text-sm text-gray-500 mb-2">{vendor.storeName || vendor.name}</p>
+                      </div>
+                      <div className="flex justify-between items-center mt-auto">
+                        <span className="font-bold text-primary">UGX {product.price?.toLocaleString()}</span>
+                        <Link to={`/product/${product._id}`} className="text-sm btn-secondary py-1 px-3 inline-block text-center">
+                          View
+                        </Link>
+                      </div>
                     </div>
                   </div>
-                </Link>
-                <div className="p-4 flex flex-col flex-grow">
-                  <div>
-                    <h3 className="font-heading font-semibold text-lg text-textPrimary line-clamp-1">{product.name}</h3>
-                    <p className="text-sm text-gray-500 mb-2">{vendor.storeName || vendor.name}</p>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+              <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">About Our Store</h2>
+                {vendor.storeDescription ? (
+                  <p className="text-gray-600 leading-relaxed whitespace-pre-line">{vendor.storeDescription}</p>
+                ) : (
+                  <p className="text-gray-400 italic">This vendor hasn't provided a store description yet.</p>
+                )}
+              </div>
+            </div>
+            
+            <div className="lg:col-span-1">
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 sticky top-24">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 pb-4 border-b">Store Information</h3>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <BadgeCheck size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Status</p>
+                      <p className="font-medium text-gray-800">{vendor.isVerified ? 'Verified Vendor' : 'Unverified'}</p>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center mt-auto">
-                    <span className="font-bold text-primary">UGX {product.price?.toLocaleString()}</span>
-                    <Link to={`/product/${product._id}`} className="text-sm btn-secondary py-1 px-3 inline-block text-center">
-                      View
-                    </Link>
+                  
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <Calendar size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Member Since</p>
+                      <p className="font-medium text-gray-800">{new Date(vendor.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long' })}</p>
+                    </div>
                   </div>
+                  
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <Box size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Products Available</p>
+                      <p className="font-medium text-gray-800">{products.length} Items</p>
+                    </div>
+                  </div>
+
+                  {vendor.location && (
+                    <div className="flex items-center gap-3 text-gray-600">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <MapPin size={20} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Location</p>
+                        <p className="font-medium text-gray-800">{vendor.location}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {vendor.email && (
+                    <div className="flex items-center gap-3 text-gray-600">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <Mail size={20} />
+                      </div>
+                      <div className="overflow-hidden">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Contact Email</p>
+                        <a href={`mailto:${vendor.email}`} className="font-medium text-primary hover:underline truncate block">{vendor.email}</a>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
+            </div>
           </div>
         )}
       </div>
