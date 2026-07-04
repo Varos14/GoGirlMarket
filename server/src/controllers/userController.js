@@ -198,6 +198,41 @@ const approveVendor = async (req, res) => {
   }
 };
 
+// @desc    Buy boost credits
+// @route   POST /api/users/buy-credits
+// @access  Private/Vendor
+const buyCredits = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (user && user.role === 'vendor') {
+      const packageCost = 10000;
+      const creditsGained = 50;
+
+      // Mock payment for now: deduct directly from their wallet availableBalance.
+      // In production, this would integrate with Flutterwave and trigger upon webhook success.
+      if (!user.wallet) user.wallet = { pendingBalance: 0, availableBalance: 0, boostCredits: 0 };
+      
+      if (user.wallet.availableBalance < packageCost) {
+        return res.status(400).json({ message: 'Insufficient available balance to buy credits' });
+      }
+
+      user.wallet.availableBalance -= packageCost;
+      user.wallet.boostCredits = (user.wallet.boostCredits || 0) + creditsGained;
+      user.wallet.adSpend = (user.wallet.adSpend || 0) + packageCost;
+      
+      await user.save();
+      res.json({ 
+        message: 'Boost credits purchased successfully!', 
+        wallet: user.wallet 
+      });
+    } else {
+      res.status(404).json({ message: 'Vendor not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getUsers,
   deleteUser,
@@ -208,4 +243,5 @@ module.exports = {
   removeWishlistItem,
   suspendVendor,
   approveVendor,
+  buyCredits,
 };

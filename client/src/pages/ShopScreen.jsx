@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '../store/productSlice';
 import { Link, useLocation } from 'react-router-dom';
-import { Heart } from 'lucide-react';
+import { Heart, TrendingUp } from 'lucide-react';
 import axios from 'axios';
 
 const ShopScreen = () => {
@@ -71,6 +71,16 @@ const ShopScreen = () => {
     }
   };
 
+  const handleProductClick = async (product) => {
+    if (product.isSponsored) {
+      try {
+        await axios.post(`/api/products/${product._id}/click`);
+      } catch (err) {
+        console.error('Failed to register ad click', err);
+      }
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="flex flex-col md:flex-row gap-8">
@@ -124,9 +134,14 @@ const ShopScreen = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products && products.length > 0 ? (
                   products.map((product) => (
-                    <div key={product._id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
-                      <Link to={`/product/${product._id}`} className="relative block">
+                    <div key={product._id} className={`bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex flex-col ${product.isSponsored ? 'ring-1 ring-indigo-500/30' : ''}`}>
+                      <Link to={`/product/${product._id}`} className="relative block" onClick={() => handleProductClick(product)}>
                         <div className="h-56 bg-surface flex items-center justify-center cursor-pointer relative group">
+                          {product.isSponsored && (
+                            <div className="absolute top-3 left-3 bg-indigo-600/90 backdrop-blur text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded shadow-sm z-10 flex items-center gap-1">
+                              <TrendingUp size={12} /> Sponsored
+                            </div>
+                          )}
                           <img src={product.images?.[0] || 'https://via.placeholder.com/800x800.png?text=No+Image'} alt={product.name} className="h-full w-full object-cover" />
                           <div className="absolute inset-0 bg-black bg-opacity-20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                               <span className="bg-white text-textPrimary px-6 py-2 font-bold rounded-md shadow-md transform translate-y-4 group-hover:translate-y-0 transition-transform">View Details</span>

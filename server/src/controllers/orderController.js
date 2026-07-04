@@ -419,12 +419,17 @@ const getDashboardStats = async (req, res) => {
     const totalUsers = await User.countDocuments({});
     const totalVendors = await User.countDocuments({ role: 'vendor' });
 
+    // Aggregate Ad Revenue
+    const vendors = await User.find({ role: 'vendor' });
+    const adRevenue = vendors.reduce((acc, v) => acc + (v.wallet?.adSpend || 0), 0);
+
     res.json({
       totalOrders,
       totalRevenue,
       platformCommission,
       totalUsers,
-      totalVendors
+      totalVendors,
+      adRevenue
     });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });

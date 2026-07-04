@@ -48,6 +48,8 @@ const userSchema = new mongoose.Schema({
   wallet: {
     pendingBalance: { type: Number, default: 0 },
     availableBalance: { type: Number, default: 0 },
+    boostCredits: { type: Number, default: 0 },
+    adSpend: { type: Number, default: 0 },
   },
   
   // Payout information (Flutterwave Splits)

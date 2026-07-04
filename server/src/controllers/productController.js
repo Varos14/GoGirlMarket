@@ -31,11 +31,11 @@ const getProducts = async (req, res) => {
 
   const query = { ...keyword, ...category, ...vendor, ...featured };
 
-  let sortCriteria = { createdAt: -1 };
+  let sortCriteria = { isSponsored: -1, createdAt: -1 };
   if (req.query.sort === 'lowest') {
-    sortCriteria = { price: 1 };
+    sortCriteria = { isSponsored: -1, price: 1 };
   } else if (req.query.sort === 'highest') {
-    sortCriteria = { price: -1 };
+    sortCriteria = { isSponsored: -1, price: -1 };
   }
 
   try {
@@ -280,4 +280,71 @@ const updateProductFeatured = async (req, res) => {
   }
 };
 
-module.exports = { getProducts, getProductById, createProduct, updateProduct, deleteProduct, createProductReview, importProductsCSV, updateProductFeatured };
+// @desc    Toggle product sponsorship
+// @route   PUT /api/products/:id/sponsor
+// @access  Private/Vendor
+const sponsorProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (product) {
+      if (product.vendor.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Not authorized to sponsor this product' });
+      }
+
+      const vendor = await require('../models/User').findById(product.vendor);
+      
+      // If trying to turn on sponsorship, check if they have credits
+      if (!product.isSponsored) {
+        if (!vendor.wallet || !vendor.wallet.boostCredits || vendor.wallet.boostCredits <= 0) {
+          return res.status(400).json({ message: 'You need Boost Credits to sponsor a product. Please purchase credits.' });
+        }
+      }
+
+      product.isSponsored = !product.isSponsored;
+      const updatedProduct = await product.save();
+      res.json(updatedProduct);
+    } else {
+      res.status(404).json({ message: 'Product not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Register a click on a sponsored product
+// @route   POST /api/products/:id/click
+// @access  Public
+const clickSponsoredProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+
+    if (product && product.isSponsored) {
+      const vendor = await require('../models/User').findById(product.vendor);
+      
+      if (vendor && vendor.wallet && vendor.wallet.boostCredits > 0) {
+        vendor.wallet.boostCredits -= 1;
+        
+        // If credits ran out, disable all sponsored products for this vendor
+        if (vendor.wallet.boostCredits <= 0) {
+          vendor.wallet.boostCredits = 0;
+          await Product.updateMany({ vendor: vendor._id }, { isSponsored: false });
+        }
+        
+        await vendor.save();
+      } else {
+        // Fallback: If they somehow got a click with no credits, disable this product's sponsorship
+        product.isSponsored = false;
+        await product.save();
+      }
+      
+      res.json({ message: 'Click registered' });
+    } else {
+      res.status(404).json({ message: 'Product not found or not sponsored' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+module.exports = { getProducts, getProductById, createProduct, updateProduct, deleteProduct, createProductReview, importProductsCSV, updateProductFeatured, sponsorProduct, clickSponsoredProduct };

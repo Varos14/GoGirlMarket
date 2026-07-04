@@ -17,6 +17,7 @@ const DashboardScreen = () => {
     totalOrders: 0,
     totalRevenue: 0,
     platformCommission: 0,
+    adRevenue: 0,
     totalUsers: 0,
     totalVendors: 0
   });
@@ -85,6 +86,10 @@ const DashboardScreen = () => {
                   <div>
                     <p className="text-white/80 font-medium text-xs mb-1 uppercase tracking-wider">Platform Commission</p>
                     <h4 className="text-xl font-bold">UGX {stats.platformCommission?.toLocaleString()}</h4>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-white/80 font-medium text-xs mb-1 uppercase tracking-wider">Ad Revenue</p>
+                    <h4 className="text-xl font-bold text-yellow-300">UGX {stats.adRevenue?.toLocaleString() || 0}</h4>
                   </div>
                 </div>
               </div>

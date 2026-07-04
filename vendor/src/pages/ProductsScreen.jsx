@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { PackagePlus, Upload, Image as ImageIcon, Trash2, Edit, Star, FileSpreadsheet } from 'lucide-react';
+import { PackagePlus, Upload, Image as ImageIcon, Trash2, Edit, Star, FileSpreadsheet, TrendingUp, Zap } from 'lucide-react';
 
 const ProductsScreen = () => {
   const [products, setProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [vendorWallet, setVendorWallet] = useState(null);
 
   // Form State
   const [name, setName] = useState('');
@@ -40,6 +41,12 @@ const ProductsScreen = () => {
       const { data } = await axios.get(`/api/products?vendor=${vendorInfo._id}`, config);
       setProducts(data.products);
       setLoadingProducts(false);
+      
+      // Fetch vendor profile to get wallet data
+      const profileRes = await axios.get('/api/auth/profile', config);
+      if (profileRes.data.wallet) {
+        setVendorWallet(profileRes.data.wallet);
+      }
     } catch (error) {
       console.error('Failed to fetch vendor products', error);
       setLoadingProducts(false);
@@ -61,6 +68,35 @@ const ProductsScreen = () => {
         fetchProducts(); // Refresh list
       } catch (error) {
         alert(error.response?.data?.message || 'Failed to delete product');
+      }
+    }
+  };
+
+  const sponsorHandler = async (id) => {
+    try {
+      const vendorInfo = JSON.parse(localStorage.getItem('vendorInfo'));
+      const config = {
+        headers: { Authorization: `Bearer ${vendorInfo.token}` },
+      };
+      await axios.put(`/api/products/${id}/sponsor`, {}, config);
+      fetchProducts(); // Refresh list
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to toggle sponsorship');
+    }
+  };
+
+  const buyCreditsHandler = async () => {
+    if (window.confirm('Buy 50 Boost Credits for 10,000 UGX? This will be deducted from your Available Balance.')) {
+      try {
+        const vendorInfo = JSON.parse(localStorage.getItem('vendorInfo'));
+        const config = {
+          headers: { Authorization: `Bearer ${vendorInfo.token}` },
+        };
+        const { data } = await axios.post('/api/users/buy-credits', {}, config);
+        alert(data.message);
+        setVendorWallet(data.wallet);
+      } catch (error) {
+        alert(error.response?.data?.message || 'Failed to purchase credits');
       }
     }
   };
@@ -182,6 +218,26 @@ const ProductsScreen = () => {
     <div className="flex flex-col lg:flex-row gap-8">
       {/* Left Col: Product List */}
       <div className="flex-1">
+        
+        {/* Boost Credits Banner */}
+        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-6 mb-8 text-white flex flex-col sm:flex-row justify-between items-center shadow-md">
+          <div className="flex items-center gap-4 mb-4 sm:mb-0">
+            <div className="bg-white/20 p-3 rounded-full">
+              <Zap size={24} className="text-yellow-300" />
+            </div>
+            <div>
+              <h3 className="font-bold text-lg">Sponsored Products</h3>
+              <p className="text-white/80 text-sm">Boost Credits Available: <span className="font-extrabold text-xl ml-1">{vendorWallet?.boostCredits || 0}</span></p>
+            </div>
+          </div>
+          <button 
+            onClick={buyCreditsHandler}
+            className="bg-white text-indigo-600 font-bold px-6 py-2.5 rounded-full hover:bg-gray-50 transition-colors shadow-sm"
+          >
+            Buy 50 Credits (10k UGX)
+          </button>
+        </div>
+
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <h1 className="text-3xl font-heading font-bold text-textPrimary">Your Products</h1>
           
@@ -265,6 +321,11 @@ const ProductsScreen = () => {
                                   <Star size={8} fill="currentColor" /> Featured
                                 </span>
                               )}
+                              {product.isSponsored && (
+                                <span className="flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-100">
+                                  <TrendingUp size={8} /> Sponsored
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -276,7 +337,10 @@ const ProductsScreen = () => {
                           {product.countInStock > 0 ? `${product.countInStock} in stock` : 'Out of Stock'}
                         </span>
                       </td>
-                      <td className="py-4 px-6 text-right">
+                      <td className="py-4 px-6 text-right flex justify-end gap-2">
+                        <button onClick={() => sponsorHandler(product._id)} className={`transition-colors p-2 rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100 ${product.isSponsored ? 'text-indigo-600 hover:bg-indigo-50' : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50'}`} title={product.isSponsored ? "Stop Sponsoring" : "Sponsor Product"}>
+                          <TrendingUp size={18} />
+                        </button>
                         <button onClick={() => deleteHandler(product._id)} className="text-gray-400 hover:text-red-500 transition-colors p-2 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100" title="Delete Product">
                           <Trash2 size={18} />
                         </button>

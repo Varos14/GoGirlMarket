@@ -1,6 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { getUsers, deleteUser, updateUserRole, getVendorBySlug, getUserWishlist, addWishlistItem, removeWishlistItem, suspendVendor, approveVendor } = require('../controllers/userController');
+const { getUsers, deleteUser, updateUserRole, getVendorBySlug,  getUserWishlist,
+  addWishlistItem,
+  removeWishlistItem,
+  suspendVendor,
+  approveVendor,
+  buyCredits
+} = require('../controllers/userController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.route('/store/:slug')
@@ -27,5 +33,8 @@ router.route('/:id/suspend')
 
 router.route('/:id/approve')
   .put(protect, admin, approveVendor);
+
+router.route('/buy-credits')
+  .post(protect, buyCredits);
 
 module.exports = router;

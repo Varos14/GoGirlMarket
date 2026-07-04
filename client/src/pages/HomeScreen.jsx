@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '../store/productSlice';
 import { Link, useNavigate } from 'react-router-dom';
 import { addToCart } from '../store/cartSlice';
-import { Star, Heart } from 'lucide-react';
+import { Star, Heart, TrendingUp } from 'lucide-react';
 import axios from 'axios';
 
 const HomeScreen = () => {
@@ -58,6 +58,16 @@ const HomeScreen = () => {
       alert('Added to wishlist!');
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to add to wishlist');
+    }
+  };
+
+  const handleProductClick = async (product) => {
+    if (product.isSponsored) {
+      try {
+        await axios.post(`/api/products/${product._id}/click`);
+      } catch (err) {
+        console.error('Failed to register ad click', err);
+      }
     }
   };
 
@@ -161,7 +171,7 @@ const HomeScreen = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {products.slice(0, 8).map((product) => (
-              <div key={product._id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 relative">
+              <div key={product._id} className={`bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 relative ${product.isSponsored ? 'ring-1 ring-indigo-500/30' : ''}`}>
                 <button 
                   onClick={(e) => addToWishlist(e, product._id)}
                   className="absolute top-4 right-4 h-9 w-9 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-gray-400 hover:text-primary transition-colors shadow-sm z-10"
@@ -169,7 +179,12 @@ const HomeScreen = () => {
                 >
                   <Heart size={18} />
                 </button>
-                <Link to={`/product/${product._id}`}>
+                {product.isSponsored && (
+                  <div className="absolute top-4 left-4 bg-indigo-600/90 backdrop-blur text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded shadow-sm z-10 flex items-center gap-1">
+                    <TrendingUp size={12} /> Sponsored
+                  </div>
+                )}
+                <Link to={`/product/${product._id}`} onClick={() => handleProductClick(product)}>
                   <div className="h-64 bg-surface flex items-center justify-center relative group">
                     <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
                     <div className="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
