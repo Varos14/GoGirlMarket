@@ -344,7 +344,7 @@ const updateOrderToDelivered = async (req, res) => {
         
         vendorItemsTotal += vendorOrder.shippingPrice; // Add the vendor's shipping fee
         
-        const commissionRate = vendorDetails.commissionRate ?? 7;
+        const commissionRate = vendorDetails.commissionRate ?? 10;
         
         // The vendor keeps (100 - commissionRate)% of the item total
         // Important: platform cut is calculated BEFORE shipping is added (which is now 0 anyway).
@@ -409,9 +409,9 @@ const getDashboardStats = async (req, res) => {
           vendorItemsTotal -= vendorOrder.discountAmount;
         }
         
-        // We use the default 7% here for aggregate stats. 
+        // We use the default 10% here for aggregate stats. 
         // In a real production app, we would query the specific vendor's commissionRate or store it in the order.
-        const cut = vendorItemsTotal * (7 / 100);
+        const cut = vendorItemsTotal * (10 / 100);
         platformCommission += cut;
       }
     }

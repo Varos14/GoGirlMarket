@@ -38,7 +38,7 @@ const userSchema = new mongoose.Schema({
     ],
   isApproved: { type: Boolean, default: false }, // For vendors
   isVerified: { type: Boolean, default: false },
-  commissionRate: { type: Number, default: 7 },
+  commissionRate: { type: Number, default: 10 },
   socialLinks: {
     instagram: { type: String, default: '' },
     tiktok: { type: String, default: '' },
