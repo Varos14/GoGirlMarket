@@ -5,6 +5,7 @@ import CheckoutSteps from '../components/CheckoutSteps';
 import { createOrder, orderCreateReset } from '../store/orderSlice';
 import { clearCartItems } from '../store/cartSlice';
 import { ShieldCheck } from 'lucide-react';
+import axios from 'axios';
 
 const PlaceOrderScreen = () => {
   const navigate = useNavigate();
@@ -121,16 +122,13 @@ const PlaceOrderScreen = () => {
     
     try {
       // Protected route — pass auth token
-      const response = await fetch(`/api/coupons/validate/${couponCode}`, {
+      const config = {
         headers: {
           'Authorization': `Bearer ${userInfo?.token}`
         }
-      });
-      const data = await response.json();
+      };
       
-      if (!response.ok) {
-        throw new Error(data.message || 'Invalid coupon');
-      }
+      const { data } = await axios.get(`/api/coupons/validate/${couponCode}`, config);
       
       // Check if we have items from this vendor
       const vendorItems = cart.cartItems.filter(item => item.vendor === data.vendor);
@@ -177,7 +175,7 @@ const PlaceOrderScreen = () => {
 
       setCouponCode('');
     } catch (err) {
-      setCouponError(err.message);
+      setCouponError(err.response?.data?.message || err.message);
     } finally {
       setValidatingCoupon(false);
     }
