@@ -1,9 +1,10 @@
 import React from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, ShoppingBag, Settings, LogOut, Wallet } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingBag, Settings, LogOut, Wallet, Tag } from 'lucide-react';
 import DashboardScreen from './pages/DashboardScreen';
 import ProductsScreen from './pages/ProductsScreen';
 import OrdersScreen from './pages/OrdersScreen';
+import CouponsScreen from './pages/CouponsScreen';
 import SettingsScreen from './pages/SettingsScreen';
 import WalletScreen from './pages/WalletScreen';
 import LoginScreen from './pages/LoginScreen';
@@ -60,6 +61,10 @@ function App() {
                 <ShoppingBag size={18} />
                 Orders
               </Link>
+              <Link to="/coupons" className={`flex items-center gap-2 py-2 ${isActive('/coupons')}`}>
+                <Tag size={18} />
+                Coupons
+              </Link>
               <Link to="/wallet" className={`flex items-center gap-2 py-2 ${isActive('/wallet')}`}>
                 <Wallet size={18} />
                 Wallet
@@ -102,6 +107,7 @@ function App() {
           <Route path="/" element={<DashboardScreen />} />
           <Route path="/products" element={<ProductsScreen />} />
           <Route path="/orders" element={<OrdersScreen />} />
+          <Route path="/coupons" element={<CouponsScreen />} />
           <Route path="/wallet" element={<WalletScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
         </Routes>
@@ -120,6 +126,10 @@ function App() {
         <Link to="/orders" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/orders' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
           <ShoppingBag size={20} />
           <span className="text-[10px] mt-1 font-bold tracking-wide">Orders</span>
+        </Link>
+        <Link to="/coupons" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/coupons' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
+          <Tag size={20} />
+          <span className="text-[10px] mt-1 font-bold tracking-wide">Coupons</span>
         </Link>
         <Link to="/wallet" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/wallet' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
           <Wallet size={20} />

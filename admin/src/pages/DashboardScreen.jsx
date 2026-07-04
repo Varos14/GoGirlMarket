@@ -16,6 +16,7 @@ const DashboardScreen = () => {
   const [stats, setStats] = useState({
     totalOrders: 0,
     totalRevenue: 0,
+    platformCommission: 0,
     totalUsers: 0,
     totalVendors: 0
   });
@@ -76,10 +77,16 @@ const DashboardScreen = () => {
                   <div className="h-10 w-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
                     <DollarSign size={20} className="text-white" />
                   </div>
-                  <span className="flex items-center text-xs font-bold bg-white/20 px-2 py-1 rounded-full"><TrendingUp size={12} className="mr-1" /> +12.5%</span>
                 </div>
-                <p className="text-white/80 font-medium text-sm mb-1 uppercase tracking-wider">Total Revenue</p>
-                <h3 className="text-3xl font-bold font-heading">UGX {stats.totalRevenue.toLocaleString()}</h3>
+                <p className="text-white/80 font-medium text-sm mb-1 uppercase tracking-wider">Gross Merchandise Value (GMV)</p>
+                <h3 className="text-3xl font-bold font-heading">UGX {stats.totalRevenue?.toLocaleString()}</h3>
+                
+                <div className="mt-4 pt-4 border-t border-white/20 flex justify-between items-end">
+                  <div>
+                    <p className="text-white/80 font-medium text-xs mb-1 uppercase tracking-wider">Platform Commission</p>
+                    <h4 className="text-xl font-bold">UGX {stats.platformCommission?.toLocaleString()}</h4>
+                  </div>
+                </div>
               </div>
             </div>
             

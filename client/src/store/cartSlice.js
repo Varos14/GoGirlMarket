@@ -4,6 +4,7 @@ const initialState = {
   cartItems: [],
   shippingAddress: {},
   paymentMethod: 'MTN Mobile Money',
+  appliedCoupons: [], // { vendorId, code, discountType, discountValue }
 };
 
 const cartSlice = createSlice({
@@ -33,9 +34,20 @@ const cartSlice = createSlice({
     },
     clearCartItems: (state) => {
       state.cartItems = [];
+      state.appliedCoupons = [];
+    },
+    applyCoupon: (state, action) => {
+      const coupon = action.payload; // { vendor, code, discountType, discountValue }
+      // Remove any existing coupon for this vendor
+      state.appliedCoupons = state.appliedCoupons.filter(c => c.vendor !== coupon.vendor);
+      state.appliedCoupons.push(coupon);
+    },
+    removeCoupon: (state, action) => {
+      const vendorId = action.payload;
+      state.appliedCoupons = state.appliedCoupons.filter(c => c.vendor !== vendorId);
     }
   },
 });
 
-export const { addToCart, removeFromCart, saveShippingAddress, savePaymentMethod, clearCartItems } = cartSlice.actions;
+export const { addToCart, removeFromCart, saveShippingAddress, savePaymentMethod, clearCartItems, applyCoupon, removeCoupon } = cartSlice.actions;
 export default cartSlice.reducer;

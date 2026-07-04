@@ -100,6 +100,8 @@ const orderSchema = new mongoose.Schema(
           }
         ],
         shippingPrice: { type: Number, default: 0.0 },
+        discountAmount: { type: Number, default: 0.0 },
+        couponCode: { type: String },
         isDelivered: { type: Boolean, default: false },
         deliveredAt: { type: Date },
       }

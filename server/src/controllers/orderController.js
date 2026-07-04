@@ -19,6 +19,7 @@ const addOrderItems = async (req, res) => {
       taxPrice,
       shippingPrice,
       totalPrice,
+      appliedCoupons = [], // Default to empty array if not passed
     } = req.body;
 
     if (orderItems && orderItems.length === 0) {
@@ -44,6 +45,8 @@ const addOrderItems = async (req, res) => {
             vendor: vendorId,
             items: [],
             shippingPrice: 5000, // Fixed shipping per vendor
+            discountAmount: 0,
+            couponCode: null,
             isDelivered: false
           };
         }
@@ -55,6 +58,27 @@ const addOrderItems = async (req, res) => {
           price: item.price,
           product: item.product
         });
+      }
+
+      // 3. Apply Coupons to vendor groups
+      for (const coupon of appliedCoupons) {
+        if (vendorGroups[coupon.vendor]) {
+          const group = vendorGroups[coupon.vendor];
+          const groupItemsTotal = group.items.reduce((acc, item) => acc + item.price * item.qty, 0);
+          
+          let discountAmt = 0;
+          if (coupon.discountType === 'percentage') {
+            discountAmt = groupItemsTotal * (coupon.discountValue / 100);
+          } else {
+            discountAmt = coupon.discountValue;
+          }
+          
+          // Make sure discount doesn't exceed item total
+          discountAmt = Math.min(discountAmt, groupItemsTotal);
+          
+          group.discountAmount = discountAmt;
+          group.couponCode = coupon.code;
+        }
       }
 
       const vendorOrders = Object.values(vendorGroups);
@@ -312,11 +336,18 @@ const updateOrderToDelivered = async (req, res) => {
       if (vendorDetails) {
         // Calculate amount to release based on items handled by this vendor
         let vendorItemsTotal = vendorOrder.items.reduce((acc, item) => acc + (item.price * item.qty), 0);
+        
+        // Subtract coupon discount from vendor's items total (Vendor absorbs the discount)
+        if (vendorOrder.discountAmount) {
+          vendorItemsTotal -= vendorOrder.discountAmount;
+        }
+        
         vendorItemsTotal += vendorOrder.shippingPrice; // Add the vendor's shipping fee
         
         const commissionRate = vendorDetails.commissionRate ?? 7;
         
         // The vendor keeps (100 - commissionRate)% of the item total + 100% of shipping.
+        // Important: platform cut is calculated BEFORE shipping is added.
         const platformCut = (vendorItemsTotal - vendorOrder.shippingPrice) * (commissionRate / 100);
         const payoutAmount = vendorItemsTotal - platformCut;
 
@@ -364,9 +395,26 @@ const getDashboardStats = async (req, res) => {
   try {
     const totalOrders = await Order.countDocuments({});
     
-    // Calculate total revenue (sum of all paid orders)
+    // Calculate total revenue and platform commission
     const paidOrders = await Order.find({ isPaid: true });
-    const totalRevenue = paidOrders.reduce((acc, order) => acc + order.totalPrice, 0);
+    let totalRevenue = 0;
+    let platformCommission = 0;
+
+    for (const order of paidOrders) {
+      totalRevenue += order.totalPrice;
+      
+      for (const vendorOrder of order.vendorOrders) {
+        let vendorItemsTotal = vendorOrder.items.reduce((acc, item) => acc + (item.price * item.qty), 0);
+        if (vendorOrder.discountAmount) {
+          vendorItemsTotal -= vendorOrder.discountAmount;
+        }
+        
+        // We use the default 7% here for aggregate stats. 
+        // In a real production app, we would query the specific vendor's commissionRate or store it in the order.
+        const cut = vendorItemsTotal * (7 / 100);
+        platformCommission += cut;
+      }
+    }
     
     const totalUsers = await User.countDocuments({});
     const totalVendors = await User.countDocuments({ role: 'vendor' });
@@ -374,6 +422,7 @@ const getDashboardStats = async (req, res) => {
     res.json({
       totalOrders,
       totalRevenue,
+      platformCommission,
       totalUsers,
       totalVendors
     });

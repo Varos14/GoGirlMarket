@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '../store/productSlice';
 import { Link, useLocation } from 'react-router-dom';
+import { Heart } from 'lucide-react';
+import axios from 'axios';
 
 const ShopScreen = () => {
   const dispatch = useDispatch();
@@ -13,10 +15,61 @@ const ShopScreen = () => {
 
   const productList = useSelector((state) => state.products);
   const { loading, error, products, page, pages } = productList;
+  
+  const { userInfo } = useSelector((state) => state.auth);
+
+  // Ref for the observer target
+  const observerTarget = useRef(null);
+  const [isFetching, setIsFetching] = useState(false);
+
+  // Initial load or sort/filter change
+  useEffect(() => {
+    dispatch(fetchProducts({ category: categoryParam, keyword: keywordParam, sort, pageNumber: 1 }));
+  }, [dispatch, categoryParam, keywordParam, sort]);
+
+  // Observer callback for infinite scroll
+  const handleObserver = useCallback((entries) => {
+    const target = entries[0];
+    if (target.isIntersecting && page < pages && !loading && !isFetching) {
+      setIsFetching(true);
+      dispatch(fetchProducts({ category: categoryParam, keyword: keywordParam, sort, pageNumber: page + 1 }))
+        .finally(() => setIsFetching(false));
+    }
+  }, [dispatch, categoryParam, keywordParam, sort, page, pages, loading, isFetching]);
 
   useEffect(() => {
-    dispatch(fetchProducts({ category: categoryParam, keyword: keywordParam, sort }));
-  }, [dispatch, categoryParam, keywordParam, sort]);
+    const observer = new IntersectionObserver(handleObserver, {
+      root: null,
+      rootMargin: '200px',
+      threshold: 0.1
+    });
+    
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+    
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [handleObserver]);
+
+  const addToWishlist = async (e, productId) => {
+    e.preventDefault();
+    if (!userInfo) {
+      alert('Please log in to add items to your wishlist');
+      return;
+    }
+    
+    try {
+      const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+      await axios.post('/api/users/wishlist', { productId }, config);
+      alert('Added to wishlist!');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to add to wishlist');
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -58,7 +111,7 @@ const ShopScreen = () => {
             </select>
           </div>
 
-          {loading ? (
+          {loading && products.length === 0 ? (
             <div className="flex justify-center items-center py-20">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
             </div>
@@ -72,7 +125,7 @@ const ShopScreen = () => {
                 {products && products.length > 0 ? (
                   products.map((product) => (
                     <div key={product._id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 flex flex-col">
-                      <Link to={`/product/${product._id}`}>
+                      <Link to={`/product/${product._id}`} className="relative block">
                         <div className="h-56 bg-surface flex items-center justify-center cursor-pointer relative group">
                           <img src={product.images?.[0] || 'https://via.placeholder.com/800x800.png?text=No+Image'} alt={product.name} className="h-full w-full object-cover" />
                           <div className="absolute inset-0 bg-black bg-opacity-20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -80,6 +133,13 @@ const ShopScreen = () => {
                           </div>
                         </div>
                       </Link>
+                      <button 
+                        onClick={(e) => addToWishlist(e, product._id)}
+                        className="absolute top-3 right-3 h-10 w-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-gray-400 hover:bg-pink-50 hover:text-primary transition-colors shadow-sm z-10"
+                        title="Add to Wishlist"
+                      >
+                        <Heart size={18} />
+                      </button>
                       <div className="p-4 flex flex-col flex-grow">
                         <div>
                           <h3 className="font-heading font-semibold text-lg text-textPrimary line-clamp-1">{product.name}</h3>
@@ -104,16 +164,16 @@ const ShopScreen = () => {
                 )}
               </div>
 
-              {/* Pagination */}
-              {pages > 1 && (
-                <div className="mt-12 flex justify-center gap-2">
-                  <button className="px-4 py-2 border rounded-md hover:bg-surface transition-colors" disabled={page === 1}>Previous</button>
-                  {[...Array(pages).keys()].map((x) => (
-                    <button key={x + 1} className={`px-4 py-2 border rounded-md ${x + 1 === page ? 'bg-primary text-white font-bold shadow-md' : 'hover:bg-surface transition-colors'}`}>
-                      {x + 1}
-                    </button>
-                  ))}
-                  <button className="px-4 py-2 border rounded-md hover:bg-surface transition-colors" disabled={page === pages}>Next</button>
+              {/* Infinite Scroll Target */}
+              {page < pages && (
+                <div ref={observerTarget} className="flex justify-center items-center py-8 mt-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              )}
+              
+              {!loading && products.length > 0 && page === pages && (
+                <div className="text-center py-8 text-gray-500 mt-8">
+                  <p>You have reached the end of the list.</p>
                 </div>
               )}
             </>

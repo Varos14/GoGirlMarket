@@ -211,6 +211,15 @@ const ProductsScreen = () => {
             </button>
           </form>
         </div>
+        <div className="mb-4">
+          <a 
+            href="data:text/csv;charset=utf-8,Name,Price,Stock,Description,Category,Brand%0AExample Product,50000,10,A great product,Fashion,Generic" 
+            download="products_template.csv"
+            className="text-xs text-primary hover:underline font-semibold"
+          >
+            Download CSV Template
+          </a>
+        </div>
 
         {csvError && <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm font-medium">{csvError}</div>}
         {csvSuccess && <div className="bg-green-50 border border-green-100 text-green-600 px-4 py-3 rounded-lg mb-6 text-sm font-medium">{csvSuccess}</div>}

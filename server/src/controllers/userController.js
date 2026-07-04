@@ -95,9 +95,117 @@ const getVendorBySlug = async (req, res) => {
   }
 };
 
+// @desc    Get user wishlist
+// @route   GET /api/users/wishlist
+// @access  Private
+const getUserWishlist = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate('wishlist', 'name price images vendor countInStock');
+    
+    if (user) {
+      res.json(user.wishlist);
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Add product to wishlist
+// @route   POST /api/users/wishlist
+// @access  Private
+const addWishlistItem = async (req, res) => {
+  try {
+    const { productId } = req.body;
+    
+    const user = await User.findById(req.user._id);
+    
+    if (user) {
+      // Check if already in wishlist
+      if (user.wishlist.includes(productId)) {
+        return res.status(400).json({ message: 'Product already in wishlist' });
+      }
+      
+      user.wishlist.push(productId);
+      await user.save();
+      
+      res.status(201).json({ message: 'Product added to wishlist' });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Remove product from wishlist
+// @route   DELETE /api/users/wishlist/:productId
+// @access  Private
+const removeWishlistItem = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    
+    if (user) {
+      user.wishlist = user.wishlist.filter(
+        (item) => item.toString() !== req.params.productId
+      );
+      
+      await user.save();
+      
+      res.json({ message: 'Product removed from wishlist' });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Suspend vendor
+// @route   PUT /api/users/:id/suspend
+// @access  Private/Admin
+const suspendVendor = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (user && user.role === 'vendor') {
+      user.isSuspended = !user.isSuspended;
+      await user.save();
+      res.json({ message: user.isSuspended ? 'Vendor suspended' : 'Vendor reinstated', isSuspended: user.isSuspended });
+    } else {
+      res.status(404).json({ message: 'Vendor not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Approve vendor
+// @route   PUT /api/users/:id/approve
+// @access  Private/Admin
+const approveVendor = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (user && user.role === 'vendor') {
+      user.isApproved = !user.isApproved;
+      await user.save();
+      res.json({ message: user.isApproved ? 'Vendor approved' : 'Vendor unapproved', isApproved: user.isApproved });
+    } else {
+      res.status(404).json({ message: 'Vendor not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getUsers,
   deleteUser,
   updateUserRole,
   getVendorBySlug,
+  getUserWishlist,
+  addWishlistItem,
+  removeWishlistItem,
+  suspendVendor,
+  approveVendor,
 };

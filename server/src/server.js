@@ -10,6 +10,8 @@ const orderRoutes = require('./routes/orderRoutes');
 const walletRoutes = require('./routes/walletRoutes');
 const configRoutes = require('./routes/configRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const couponRoutes = require('./routes/couponRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 
 // Connect to database
 connectDB();
@@ -29,6 +31,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/vendors/analytics', analyticsRoutes);
+app.use('/api/coupons', couponRoutes);
+app.use('/api/chat', chatRoutes);
 
 app.get('/', (req, res) => {
   res.send('GoGirl Market API is running...');

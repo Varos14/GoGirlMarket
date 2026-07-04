@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '../store/productSlice';
 import { Link, useNavigate } from 'react-router-dom';
 import { addToCart } from '../store/cartSlice';
-import { Star } from 'lucide-react';
+import { Star, Heart } from 'lucide-react';
 import axios from 'axios';
 
 const HomeScreen = () => {
@@ -12,6 +12,7 @@ const HomeScreen = () => {
 
   const productList = useSelector((state) => state.products);
   const { loading, error, products } = productList;
+  const { userInfo } = useSelector((state) => state.auth);
 
   const [featuredProducts, setFeaturedProducts] = React.useState([]);
   const [loadingFeatured, setLoadingFeatured] = React.useState(true);
@@ -42,6 +43,22 @@ const HomeScreen = () => {
       qty: 1
     }));
     navigate('/cart');
+  };
+
+  const addToWishlist = async (e, productId) => {
+    e.preventDefault();
+    if (!userInfo) {
+      alert('Please log in to add items to your wishlist');
+      return;
+    }
+    
+    try {
+      const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+      await axios.post('/api/users/wishlist', { productId }, config);
+      alert('Added to wishlist!');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to add to wishlist');
+    }
   };
 
   return (
@@ -144,7 +161,14 @@ const HomeScreen = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {products.slice(0, 8).map((product) => (
-              <div key={product._id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+              <div key={product._id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 relative">
+                <button 
+                  onClick={(e) => addToWishlist(e, product._id)}
+                  className="absolute top-4 right-4 h-9 w-9 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-gray-400 hover:text-primary transition-colors shadow-sm z-10"
+                  title="Add to Wishlist"
+                >
+                  <Heart size={18} />
+                </button>
                 <Link to={`/product/${product._id}`}>
                   <div className="h-64 bg-surface flex items-center justify-center relative group">
                     <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />

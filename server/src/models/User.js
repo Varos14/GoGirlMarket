@@ -18,6 +18,24 @@ const userSchema = new mongoose.Schema({
   tagline: { type: String },
   phone: { type: String },
   location: { type: String },
+    isVendor: {
+      type: Boolean,
+      default: false,
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    },
+    isSuspended: {
+      type: Boolean,
+      default: false,
+    },
+    wishlist: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Product',
+      }
+    ],
   isApproved: { type: Boolean, default: false }, // For vendors
   isVerified: { type: Boolean, default: false },
   commissionRate: { type: Number, default: 7 },

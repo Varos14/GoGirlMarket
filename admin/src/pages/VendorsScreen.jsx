@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Store, Trash2, BadgeCheck, Percent } from 'lucide-react';
+import { Store, Trash2, BadgeCheck, Percent, Ban, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 
 const VendorsScreen = () => {
@@ -55,6 +55,33 @@ const VendorsScreen = () => {
       fetchVendors();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to update verification');
+    }
+  };
+
+  const toggleSuspendHandler = async (id, currentStatus) => {
+    const action = currentStatus ? 'reinstate' : 'suspend';
+    if (window.confirm(`Are you sure you want to ${action} this vendor?`)) {
+      try {
+        const userInfoStr = localStorage.getItem('userInfo');
+        const userInfo = JSON.parse(userInfoStr);
+        const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+        await axios.put(`/api/users/${id}/suspend`, {}, config);
+        fetchVendors();
+      } catch (error) {
+        alert(error.response?.data?.message || `Failed to ${action} vendor`);
+      }
+    }
+  };
+
+  const toggleApproveHandler = async (id, currentStatus) => {
+    try {
+      const userInfoStr = localStorage.getItem('userInfo');
+      const userInfo = JSON.parse(userInfoStr);
+      const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+      await axios.put(`/api/users/${id}/approve`, {}, config);
+      fetchVendors();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to approve vendor');
     }
   };
 
@@ -135,7 +162,21 @@ const VendorsScreen = () => {
                               Unverified
                             </span>
                           )}
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-600">
+                          {vendor.isApproved ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-600">
+                              <CheckCircle size={12} /> Approved
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-50 text-yellow-600">
+                              Pending Auth
+                            </span>
+                          )}
+                          {vendor.isSuspended && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600">
+                              <Ban size={12} /> Suspended
+                            </span>
+                          )}
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-600">
                             {vendor.commissionRate !== undefined ? vendor.commissionRate : 7}% Comm.
                           </span>
                         </div>
@@ -144,8 +185,14 @@ const VendorsScreen = () => {
                         <button onClick={() => toggleVerifiedHandler(vendor._id, vendor.isVerified)} className={`p-2 rounded-md transition-all border border-transparent hover:shadow-md ${vendor.isVerified ? 'text-blue-500 hover:text-white hover:bg-blue-500' : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50'}`} title="Toggle Verified Status">
                           <BadgeCheck size={16} />
                         </button>
-                        <button onClick={() => updateCommissionHandler(vendor._id, vendor.commissionRate)} className="text-green-500 hover:text-white hover:bg-green-500 transition-all p-2 rounded-md border border-transparent hover:shadow-md" title="Update Commission Rate">
+                        <button onClick={() => toggleApproveHandler(vendor._id, vendor.isApproved)} className={`p-2 rounded-md transition-all border border-transparent hover:shadow-md ${vendor.isApproved ? 'text-green-500 hover:text-white hover:bg-green-500' : 'text-gray-400 hover:text-green-500 hover:bg-green-50'}`} title="Toggle Approval Status">
+                          <CheckCircle size={16} />
+                        </button>
+                        <button onClick={() => updateCommissionHandler(vendor._id, vendor.commissionRate)} className="text-purple-500 hover:text-white hover:bg-purple-500 transition-all p-2 rounded-md border border-transparent hover:shadow-md" title="Update Commission Rate">
                           <Percent size={16} />
+                        </button>
+                        <button onClick={() => toggleSuspendHandler(vendor._id, vendor.isSuspended)} className={`p-2 rounded-md transition-all border border-transparent hover:shadow-md ${vendor.isSuspended ? 'text-red-500 hover:text-white hover:bg-red-500' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`} title={vendor.isSuspended ? "Reinstate Vendor" : "Suspend Vendor"}>
+                          <Ban size={16} />
                         </button>
                         <button onClick={() => revokeVendorHandler(vendor._id)} className="text-red-500 hover:text-white hover:bg-red-500 transition-all p-2 rounded-md border border-transparent hover:shadow-md" title="Revoke Vendor Status">
                           <Trash2 size={16} />

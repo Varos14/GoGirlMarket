@@ -3,10 +3,10 @@ import axios from 'axios';
 
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
-  async ({ keyword = '', category = '', sort = '' } = {}, { rejectWithValue }) => {
+  async ({ keyword = '', category = '', sort = '', pageNumber = 1 } = {}, { rejectWithValue }) => {
     try {
-      const { data } = await axios.get(`/api/products?keyword=${keyword}&category=${category}&sort=${sort}`);
-      return data; // Returns { products, page, pages, count }
+      const { data } = await axios.get(`/api/products?keyword=${keyword}&category=${category}&sort=${sort}&pageNumber=${pageNumber}`);
+      return { ...data, pageNumber }; // Pass pageNumber so reducer knows whether to append or replace
     } catch (error) {
       return rejectWithValue(
         error.response && error.response.data.message
@@ -83,12 +83,25 @@ const productSlice = createSlice({
   extraReducers: (builder) => {
     // Fetch Products
     builder
-      .addCase(fetchProducts.pending, (state) => {
-        state.loading = true;
+      .addCase(fetchProducts.pending, (state, action) => {
+        // Only set loading to true if we are fetching page 1 (initial load). 
+        // For infinite scroll, we might not want to show a full-page loader.
+        const pageNumber = action.meta.arg?.pageNumber || 1;
+        if (pageNumber === 1) {
+          state.loading = true;
+        }
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.products = action.payload.products;
+        
+        if (action.payload.pageNumber > 1) {
+          // Append for infinite scroll
+          state.products = [...state.products, ...action.payload.products];
+        } else {
+          // Replace for new search/filter
+          state.products = action.payload.products;
+        }
+        
         state.page = action.payload.page;
         state.pages = action.payload.pages;
         state.error = null;
