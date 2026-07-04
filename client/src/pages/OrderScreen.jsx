@@ -132,12 +132,12 @@ const OrderScreen = () => {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h2 className="text-2xl font-heading font-bold mb-4 border-b pb-2">Home Delivery Details</h2>
             <p className="text-gray-700 mb-4">
-              <span className="font-bold">Name: </span> {order.user.name} <br />
-              <span className="font-bold">Email: </span> <a href={`mailto:${order.user.email}`} className="text-primary hover:underline">{order.user.email}</a> <br />
-              {order.shippingAddress.phone && <><span className="font-bold">Phone: </span> {order.shippingAddress.phone} <br /></>}
+              <span className="font-bold">Name: </span> {order.user?.name} <br />
+              <span className="font-bold">Email: </span> <a href={`mailto:${order.user?.email}`} className="text-primary hover:underline">{order.user?.email}</a> <br />
+              {order.shippingAddress?.phone && <><span className="font-bold">Phone: </span> {order.shippingAddress?.phone} <br /></>}
               <span className="font-bold">Address: </span>
-              {order.shippingAddress.address}, {order.shippingAddress.city},{' '}
-              {order.shippingAddress.postalCode}, {order.shippingAddress.country}
+              {order.shippingAddress?.address}, {order.shippingAddress?.city},{' '}
+              {order.shippingAddress?.postalCode}, {order.shippingAddress?.country}
             </p>
           </div>
 
@@ -153,7 +153,7 @@ const OrderScreen = () => {
               </div>
             ) : order.isPaid ? (
               <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded text-sm">
-                Paid on {order.paidAt.substring(0, 10)}
+                Paid on {order.paidAt?.substring(0, 10)}
               </div>
             ) : (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded text-sm">
@@ -234,7 +234,7 @@ const OrderScreen = () => {
             <div className="space-y-4 mb-6">
               <div className="flex justify-between">
                 <span className="text-gray-600">Items</span>
-                <span className="font-semibold">UGX {order.itemsPrice.toLocaleString()}</span>
+                <span className="font-semibold">UGX {order.itemsPrice?.toLocaleString()}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Shipping</span>
@@ -243,7 +243,7 @@ const OrderScreen = () => {
 
               <div className="flex justify-between border-t pt-4 text-xl">
                 <span className="font-bold">Total</span>
-                <span className="font-bold text-primary">UGX {order.totalPrice.toLocaleString()}</span>
+                <span className="font-bold text-primary">UGX {order.totalPrice?.toLocaleString()}</span>
               </div>
             </div>
 
