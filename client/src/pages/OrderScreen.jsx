@@ -7,8 +7,8 @@ import axios from 'axios';
 const FlutterwaveCheckout = ({ orderId, amount, onSuccess }) => {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
-  const userLogin = useSelector((state) => state.userLogin);
-  const { userInfo } = userLogin;
+  const auth = useSelector((state) => state.auth);
+  const { userInfo } = auth || {};
 
   const handlePayment = async () => {
     try {
