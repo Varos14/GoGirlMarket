@@ -240,10 +240,7 @@ const OrderScreen = () => {
                 <span className="text-gray-600">Shipping</span>
                 <span className="font-medium text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Paid on Delivery</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tax</span>
-                <span className="font-semibold">UGX {order.taxPrice.toLocaleString()}</span>
-              </div>
+
               <div className="flex justify-between border-t pt-4 text-xl">
                 <span className="font-bold">Total</span>
                 <span className="font-bold text-primary">UGX {order.totalPrice.toLocaleString()}</span>

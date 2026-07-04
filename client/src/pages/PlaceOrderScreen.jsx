@@ -52,7 +52,8 @@ const PlaceOrderScreen = () => {
   // Shipping price is now 0 as it is negotiated and paid on delivery
   const shippingPrice = 0;
   
-  const taxPrice = addDecimals(Number((0.15 * itemsPriceAfterDiscount).toFixed(0))); // 15% tax
+  // No tax is charged to the customer
+  const taxPrice = 0;
   const totalPrice = (
     Number(itemsPriceAfterDiscount) +
     Number(shippingPrice) +
@@ -187,10 +188,7 @@ const PlaceOrderScreen = () => {
                   <span>Shipping</span>
                   <span className="font-medium text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Calculated & Paid on Delivery</span>
                 </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Tax</span>
-                <span className="font-semibold">UGX {Number(taxPrice).toLocaleString()}</span>
-              </div>
+
               <div className="flex justify-between border-t pt-4 text-xl">
                 <span className="font-bold">Total</span>
                 <span className="font-bold text-primary">UGX {Number(totalPrice).toLocaleString()}</span>
