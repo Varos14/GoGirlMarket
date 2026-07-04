@@ -103,16 +103,38 @@ const OrderScreen = () => {
     </div>
   ) : (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-3xl font-heading font-bold mb-8 text-textPrimary">Order {order._id}</h1>
+      <h1 className="text-3xl font-heading font-bold mb-4 text-textPrimary">Order {order._id}</h1>
       
+      {/* Jumia-style Status Tracker */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
+        <h2 className="text-xl font-bold mb-6">Order Status</h2>
+        <div className="relative pt-2">
+          <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
+            <div style={{ width: 
+              order.status === 'Placed' ? '25%' : 
+              order.status === 'Confirmed' ? '50%' : 
+              order.status === 'Shipped' ? '75%' : 
+              order.status === 'Delivered' ? '100%' : '0%' 
+            }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary transition-all duration-500"></div>
+          </div>
+          <div className="flex justify-between text-sm font-semibold text-gray-500">
+            <div className={['Placed', 'Confirmed', 'Shipped', 'Delivered'].includes(order.status) ? 'text-primary' : ''}>Placed</div>
+            <div className={['Confirmed', 'Shipped', 'Delivered'].includes(order.status) ? 'text-primary' : ''}>Confirmed</div>
+            <div className={['Shipped', 'Delivered'].includes(order.status) ? 'text-primary' : ''}>Shipped</div>
+            <div className={order.status === 'Delivered' ? 'text-primary' : ''}>Delivered</div>
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Left Side: Order Details */}
         <div className="w-full lg:w-2/3 space-y-6">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h2 className="text-2xl font-heading font-bold mb-4 border-b pb-2">Shipping</h2>
+            <h2 className="text-2xl font-heading font-bold mb-4 border-b pb-2">Home Delivery Details</h2>
             <p className="text-gray-700 mb-4">
               <span className="font-bold">Name: </span> {order.user.name} <br />
               <span className="font-bold">Email: </span> <a href={`mailto:${order.user.email}`} className="text-primary hover:underline">{order.user.email}</a> <br />
+              {order.shippingAddress.phone && <><span className="font-bold">Phone: </span> {order.shippingAddress.phone} <br /></>}
               <span className="font-bold">Address: </span>
               {order.shippingAddress.address}, {order.shippingAddress.city},{' '}
               {order.shippingAddress.postalCode}, {order.shippingAddress.country}
@@ -125,7 +147,15 @@ const OrderScreen = () => {
               <span className="font-bold">Method: </span>
               {order.paymentMethod}
             </p>
-            {order.isPaid ? (
+            {order.paymentMethod === 'Cash on Delivery' ? (
+              <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded text-sm">
+                Pay on Delivery
+              </div>
+            ) : order.paymentMethod === 'In-App Wallet Balance' ? (
+               <div className="bg-purple-100 border border-purple-400 text-purple-700 px-4 py-3 rounded text-sm">
+                Paid from Wallet
+              </div>
+            ) : order.isPaid ? (
               <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded text-sm">
                 Paid on {order.paidAt.substring(0, 10)}
               </div>
@@ -224,10 +254,16 @@ const OrderScreen = () => {
               </div>
             </div>
 
-            {!order.isPaid && (
+            {!order.isPaid && order.paymentMethod !== 'Cash on Delivery' && order.paymentMethod !== 'In-App Wallet Balance' && (
               <div className="mt-8 border-t pt-6">
                 <h3 className="font-bold text-gray-700 mb-4">Complete Payment</h3>
                 <FlutterwaveCheckout orderId={orderId} amount={order.totalPrice} onSuccess={handlePaymentSuccess} />
+              </div>
+            )}
+            
+            {order.paymentMethod === 'Cash on Delivery' && !order.isPaid && (
+              <div className="mt-8 border-t pt-6">
+                <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded border">Please have exact change ready for the delivery rider.</p>
               </div>
             )}
           </div>

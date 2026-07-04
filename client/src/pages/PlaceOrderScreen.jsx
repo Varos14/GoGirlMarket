@@ -65,8 +65,9 @@ const PlaceOrderScreen = () => {
         {/* Order Details */}
         <div className="w-full lg:w-2/3 space-y-6">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h2 className="text-2xl font-heading font-bold mb-4 border-b pb-2">Shipping</h2>
+            <h2 className="text-2xl font-heading font-bold mb-4 border-b pb-2">Home Delivery Details</h2>
             <p className="text-gray-700">
+              {cart.shippingAddress.phone && <><span className="font-bold">Phone: </span> {cart.shippingAddress.phone} <br/></>}
               <span className="font-bold">Address: </span>
               {cart.shippingAddress.address}, {cart.shippingAddress.city},{' '}
               {cart.shippingAddress.postalCode}, {cart.shippingAddress.country}
@@ -147,13 +148,30 @@ const PlaceOrderScreen = () => {
               )}
             </button>
             
-            <div className="flex items-center justify-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg border border-green-100">
-              <ShieldCheck size={20} />
-              <div className="text-xs">
-                <p className="font-bold uppercase tracking-wider">Secure Payment</p>
-                <p className="text-green-700">Protected by Flutterwave</p>
+            {cart.paymentMethod === 'Cash on Delivery' ? (
+              <div className="flex items-center justify-center gap-2 text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                <div className="text-xs">
+                  <p className="font-bold uppercase tracking-wider">Pay on Delivery</p>
+                  <p className="text-blue-700">Have exact change ready</p>
+                </div>
               </div>
-            </div>
+            ) : cart.paymentMethod === 'In-App Wallet Balance' ? (
+              <div className="flex items-center justify-center gap-2 text-purple-600 bg-purple-50 p-3 rounded-lg border border-purple-100">
+                <ShieldCheck size={20} />
+                <div className="text-xs">
+                  <p className="font-bold uppercase tracking-wider">Wallet Payment</p>
+                  <p className="text-purple-700">Directly from your balance</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg border border-green-100">
+                <ShieldCheck size={20} />
+                <div className="text-xs">
+                  <p className="font-bold uppercase tracking-wider">Secure Payment</p>
+                  <p className="text-green-700">Protected by Flutterwave</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

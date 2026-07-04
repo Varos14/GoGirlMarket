@@ -4,6 +4,7 @@ const Product = require('../models/Product');
 const Transaction = require('../models/Transaction');
 const sendEmail = require('../utils/sendEmail');
 const { sendWhatsAppMessage } = require('../utils/twilioUtils');
+const notifications = require('../utils/notifications');
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -76,20 +77,8 @@ const addOrderItems = async (req, res) => {
 
       const createdOrder = await order.save();
       
-      // Async send email - no await so we don't block the response
-      sendEmail({
-        to: req.user.email,
-        subject: `GoGirl Market Order Received - ${createdOrder._id}`,
-        html: `<h1>Thank you for your order!</h1><p>We have successfully received your order for UGX ${totalPrice}. We will begin processing it right away.</p>`
-      });
-
-      // Send WhatsApp Notification to Buyer
-      if (req.user.phone) {
-        sendWhatsAppMessage({
-          to: req.user.phone,
-          message: `Hi ${req.user.name}, your GoGirl Market order (${createdOrder._id}) has been placed successfully for UGX ${totalPrice}. We will notify you when it ships!`
-        });
-      }
+      // Async notifications via utility
+      notifications.sendOrderPlaced(req.user, createdOrder);
 
       res.status(201).json(createdOrder);
     }
@@ -393,6 +382,39 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
+// @desc    Update overall order status (Jumia-style)
+// @route   PUT /api/orders/:id/status
+// @access  Private/Admin
+const updateOrderStatus = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).populate('user', 'name email phone');
+
+    if (order) {
+      const newStatus = req.body.status;
+      order.status = newStatus;
+
+      if (newStatus === 'Confirmed') {
+        order.confirmedAt = Date.now();
+      } else if (newStatus === 'Shipped') {
+        order.shippedAt = Date.now();
+      } else if (newStatus === 'Delivered') {
+        order.deliveredAt = Date.now();
+      }
+
+      const updatedOrder = await order.save();
+
+      // Async send status update notifications
+      notifications.sendOrderStatusUpdate(order.user, updatedOrder, newStatus);
+
+      res.json(updatedOrder);
+    } else {
+      res.status(404).json({ message: 'Order not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
 module.exports = {
   addOrderItems,
   getOrderById,
@@ -403,4 +425,5 @@ module.exports = {
   updateOrderToDelivered,
   getDashboardStats,
   processFlutterwavePayment,
+  updateOrderStatus,
 };

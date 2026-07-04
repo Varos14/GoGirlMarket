@@ -9,7 +9,8 @@ const {
   getVendorOrders, 
   updateOrderToDelivered,
   getDashboardStats,
-  processFlutterwavePayment
+  processFlutterwavePayment,
+  updateOrderStatus
 } = require('../controllers/orderController');
 const { protect, admin, vendor } = require('../middleware/authMiddleware');
 
@@ -24,5 +25,6 @@ router.route('/:id').get(protect, getOrderById);
 router.route('/:id/pay').put(protect, updateOrderToPaid);
 router.route('/:id/flutterwave').post(protect, processFlutterwavePayment);
 router.put('/:id/deliver', protect, updateOrderToDelivered);
+router.put('/:id/status', protect, admin, updateOrderStatus);
 
 module.exports = router;
