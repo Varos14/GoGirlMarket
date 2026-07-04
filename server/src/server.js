@@ -9,6 +9,7 @@ const uploadRoutes = require('./routes/uploadRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const walletRoutes = require('./routes/walletRoutes');
 const configRoutes = require('./routes/configRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 
 // Connect to database
 connectDB();
@@ -27,6 +28,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/config', configRoutes);
+app.use('/api/vendors/analytics', analyticsRoutes);
 
 app.get('/', (req, res) => {
   res.send('GoGirl Market API is running...');

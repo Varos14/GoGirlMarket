@@ -7,6 +7,8 @@ const WalletScreen = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [accountBank, setAccountBank] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
   const [withdrawing, setWithdrawing] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -47,15 +49,24 @@ const WalletScreen = () => {
       return;
     }
 
+    if (!accountBank || !accountNumber) {
+      setMessage({ type: 'error', text: 'Please provide Bank Code and Account Number' });
+      return;
+    }
+
     setWithdrawing(true);
     try {
       const vendorInfoStr = localStorage.getItem('vendorInfo');
       const vendorInfo = JSON.parse(vendorInfoStr);
       const config = { headers: { Authorization: `Bearer ${vendorInfo.token}` } };
       
-      await axios.post('/api/wallet/withdraw', { amount }, config);
+      await axios.post('/api/wallet/withdraw', { 
+        amount,
+        account_bank: accountBank,
+        account_number: accountNumber
+      }, config);
       
-      setMessage({ type: 'success', text: 'Withdrawal requested successfully. Admin will process it shortly.' });
+      setMessage({ type: 'success', text: 'Withdrawal processed successfully. Funds are on the way!' });
       setWithdrawAmount('');
       fetchWallet(); // Refresh data
     } catch (error) {
@@ -139,6 +150,30 @@ const WalletScreen = () => {
                     max={wallet.availableBalance}
                   />
                 </div>
+                <div className="mb-4">
+                  <label className="block text-gray-600 text-sm font-bold mb-2">Bank / Mobile Money Provider Code</label>
+                  <select 
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                    value={accountBank}
+                    onChange={(e) => setAccountBank(e.target.value)}
+                  >
+                    <option value="">Select Provider</option>
+                    <option value="MTN">MTN Mobile Money</option>
+                    <option value="AIRTEL">Airtel Money</option>
+                    <option value="FCMB">FCMB</option>
+                    <option value="044">Access Bank</option>
+                  </select>
+                </div>
+                <div className="mb-6">
+                  <label className="block text-gray-600 text-sm font-bold mb-2">Account Number / Phone Number</label>
+                  <input
+                    type="text"
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                    placeholder="e.g. 0770000000"
+                  />
+                </div>
                 <button
                   type="submit"
                   disabled={withdrawing || wallet.availableBalance <= 0}
@@ -147,10 +182,10 @@ const WalletScreen = () => {
                   {withdrawing ? (
                     <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
                   ) : (
-                    'Withdraw Funds'
+                    'Withdraw Funds Instantly'
                   )}
                 </button>
-                <p className="text-xs text-gray-400 mt-3 text-center">Funds are sent manually by admins to your registered payout account.</p>
+                <p className="text-xs text-gray-400 mt-3 text-center">Funds will be sent automatically via Flutterwave Transfers.</p>
               </form>
             </div>
           </div>

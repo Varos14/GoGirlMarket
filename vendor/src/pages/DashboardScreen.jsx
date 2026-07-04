@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Package, ShoppingBag, DollarSign, Users, BadgeCheck, Copy } from 'lucide-react';
+import { Package, ShoppingBag, DollarSign, Users, BadgeCheck, Copy, TrendingUp } from 'lucide-react';
 import axios from 'axios';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar
+} from 'recharts';
 
 const DashboardScreen = () => {
   const [stats, setStats] = useState({
@@ -8,7 +12,10 @@ const DashboardScreen = () => {
     pendingBalance: 0,
     totalOrders: 0,
     totalProducts: 0,
-    recentOrders: []
+    recentOrders: [],
+    revenueData: [],
+    topProducts: [],
+    totalRevenue: 0
   });
   const [loading, setLoading] = useState(true);
   const [vendorInfo, setVendorInfo] = useState(null);
@@ -41,22 +48,25 @@ const DashboardScreen = () => {
           headers: { Authorization: `Bearer ${parsedVendorInfo.token}` },
         };
 
-        // Fetch vendor products, orders, and wallet in parallel
-        const [productsRes, ordersRes, walletRes] = await Promise.all([
-          axios.get(`/api/products?vendor=${parsedVendorInfo._id}`, config),
+        // Fetch analytics, orders, and wallet in parallel
+        const [analyticsRes, ordersRes, walletRes] = await Promise.all([
+          axios.get('/api/vendors/analytics', config),
           axios.get('/api/orders/vendor', config),
           axios.get('/api/wallet', config)
         ]);
 
-        const products = productsRes.data.products || [];
+        const analytics = analyticsRes.data;
         const orders = ordersRes.data || [];
         const wallet = walletRes.data.wallet || { availableBalance: 0, pendingBalance: 0 };
 
         setStats({
           availableBalance: wallet.availableBalance,
           pendingBalance: wallet.pendingBalance,
-          totalOrders: orders.length,
-          totalProducts: products.length,
+          totalOrders: analytics.totalOrders,
+          totalProducts: analytics.totalProducts,
+          totalRevenue: analytics.totalRevenue,
+          revenueData: analytics.revenueData,
+          topProducts: analytics.topProducts,
           recentOrders: orders.slice(0, 5) // top 5 recent
         });
 
@@ -162,48 +172,99 @@ const DashboardScreen = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-xl font-heading font-bold mb-4">Recent Orders</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b text-gray-500">
-                    <th className="py-3 font-semibold">Order ID</th>
-                    <th className="py-3 font-semibold">Customer</th>
-                    <th className="py-3 font-semibold">Date</th>
-                    <th className="py-3 font-semibold">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.recentOrders.length === 0 ? (
-                    <tr>
-                      <td colSpan="4" className="py-6 text-center text-gray-500">No orders yet.</td>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Revenue Chart */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <TrendingUp className="text-emerald-500" />
+                <h2 className="text-xl font-heading font-bold text-gray-800">Revenue Trend</h2>
+              </div>
+              
+              {stats.revenueData.length === 0 ? (
+                <div className="h-64 flex items-center justify-center text-gray-400">Not enough data to display</div>
+              ) : (
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={stats.revenueData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                      <XAxis dataKey="date" tick={{fontSize: 12}} tickMargin={10} stroke="#9ca3af" />
+                      <YAxis tick={{fontSize: 12}} tickFormatter={(val) => `UGX ${val/1000}k`} stroke="#9ca3af" />
+                      <Tooltip formatter={(value) => `UGX ${value.toLocaleString()}`} />
+                      <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+
+            {/* Top Products */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <Package className="text-primary" />
+                <h2 className="text-xl font-heading font-bold text-gray-800">Top Selling Products</h2>
+              </div>
+              
+              {stats.topProducts.length === 0 ? (
+                <div className="h-64 flex items-center justify-center text-gray-400">No products sold yet</div>
+              ) : (
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={stats.topProducts} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f0f0f0" />
+                      <XAxis type="number" />
+                      <YAxis dataKey="name" type="category" tick={{fontSize: 12}} width={100} />
+                      <Tooltip formatter={(value) => [`${value} units`, 'Sold']} />
+                      <Bar dataKey="qty" fill="#e11d48" radius={[0, 4, 4, 0]} barSize={24} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+            
+            {/* Recent Orders Table */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:col-span-2">
+              <h2 className="text-xl font-heading font-bold mb-4">Recent Orders</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b text-gray-500">
+                      <th className="py-3 font-semibold">Order ID</th>
+                      <th className="py-3 font-semibold">Customer</th>
+                      <th className="py-3 font-semibold">Date</th>
+                      <th className="py-3 font-semibold">Status</th>
                     </tr>
-                  ) : (
-                    stats.recentOrders.map(order => {
-                      const isDelivered = order.vendorDetails?.isDelivered;
-                      
-                      return (
-                        <tr key={order._id} className="border-b last:border-0 hover:bg-gray-50">
-                          <td className="py-4">#{order._id.substring(18)}</td>
-                          <td className="py-4">{order.user?.name || 'Unknown User'}</td>
-                          <td className="py-4">{new Date(order.createdAt).toLocaleDateString()}</td>
-                          <td className="py-4 flex gap-2">
-                            <span className={`${order.isPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} px-3 py-1 rounded-full text-xs font-bold uppercase`}>
-                              {order.isPaid ? 'Paid' : 'Unpaid'}
-                            </span>
-                            {isDelivered && (
-                              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold uppercase">
-                                Delivered
+                  </thead>
+                  <tbody>
+                    {stats.recentOrders.length === 0 ? (
+                      <tr>
+                        <td colSpan="4" className="py-6 text-center text-gray-500">No orders yet.</td>
+                      </tr>
+                    ) : (
+                      stats.recentOrders.map(order => {
+                        const isDelivered = order.vendorDetails?.isDelivered;
+                        
+                        return (
+                          <tr key={order._id} className="border-b last:border-0 hover:bg-gray-50">
+                            <td className="py-4">#{order._id.substring(18)}</td>
+                            <td className="py-4">{order.user?.name || 'Unknown User'}</td>
+                            <td className="py-4">{new Date(order.createdAt).toLocaleDateString()}</td>
+                            <td className="py-4 flex gap-2">
+                              <span className={`${order.isPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} px-3 py-1 rounded-full text-xs font-bold uppercase`}>
+                                {order.isPaid ? 'Paid' : 'Unpaid'}
                               </span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                              {isDelivered && (
+                                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold uppercase">
+                                  Delivered
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </>

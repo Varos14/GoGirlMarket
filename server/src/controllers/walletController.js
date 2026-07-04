@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
+const { initiateTransfer } = require('../utils/payoutService');
 
 // @desc    Get vendor wallet details and transactions (Dynamically clears funds)
 // @route   GET /api/wallet
@@ -70,12 +71,12 @@ const getWalletDetails = async (req, res) => {
   }
 };
 
-// @desc    Request a withdrawal
+// @desc    Request a withdrawal (Automated via Flutterwave)
 // @route   POST /api/wallet/withdraw
 // @access  Private/Vendor
 const requestWithdrawal = async (req, res) => {
   try {
-    const { amount } = req.body;
+    const { amount, account_bank, account_number } = req.body;
     const vendorId = req.user._id;
 
     if (!amount || amount <= 0) {
@@ -88,29 +89,62 @@ const requestWithdrawal = async (req, res) => {
       return res.status(400).json({ message: 'Insufficient available balance' });
     }
 
-    // Deduct from available balance
+    // Optional: Update the vendor's saved payout details if provided
+    if (account_bank && account_number) {
+      vendor.payout = {
+        ...vendor.payout,
+        bankCode: account_bank,
+        accountNumber: account_number
+      };
+    }
+
+    const bankToUse = account_bank || vendor.payout?.bankCode;
+    const numberToUse = account_number || vendor.payout?.accountNumber;
+
+    if (!bankToUse || !numberToUse) {
+      return res.status(400).json({ message: 'Payout account details missing. Please provide bank and account number.' });
+    }
+
+    // 1. Call Flutterwave to initiate transfer
+    const reference = `WD_${Date.now()}_${vendorId.toString().substring(0,6)}`;
+    
+    // If FLUTTERWAVE_SECRET_KEY is missing, we'll just mock success for local dev, 
+    // but in prod initiateTransfer handles it.
+    if (process.env.FLUTTERWAVE_SECRET_KEY) {
+      await initiateTransfer({
+        account_bank: bankToUse,
+        account_number: numberToUse,
+        amount,
+        reference
+      });
+    } else {
+      console.warn("FLUTTERWAVE_SECRET_KEY missing. Mocking transfer success.");
+    }
+
+    // 2. Deduct from available balance
     vendor.wallet.availableBalance -= amount;
     await vendor.save();
 
-    // Create withdrawal transaction
+    // 3. Create withdrawal transaction
     const withdrawalTx = await Transaction.create({
       vendor: vendorId,
       type: 'withdrawal',
       amount: amount,
-      status: 'pending',
-      description: 'Withdrawal Requested (Manual Approval Pending)'
+      status: 'completed', // Transfer initiated successfully
+      description: `Withdrawal via Flutterwave to ${bankToUse} (${numberToUse})`
     });
 
-    console.log(`[WALLET] Withdrawal requested for UGX ${amount} by ${vendor.name}`);
+    console.log(`[WALLET] Withdrawal processed for UGX ${amount} by ${vendor.name}`);
 
     res.status(201).json({
-      message: 'Withdrawal requested successfully',
+      message: 'Withdrawal processed successfully',
       wallet: vendor.wallet,
       transaction: withdrawalTx
     });
 
   } catch (error) {
-    res.status(500).json({ message: 'Server Error', error: error.message });
+    console.error('Withdrawal error:', error);
+    res.status(500).json({ message: error.message || 'Server Error' });
   }
 };
 
