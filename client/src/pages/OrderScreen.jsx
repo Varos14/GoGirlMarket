@@ -147,11 +147,7 @@ const OrderScreen = () => {
               <span className="font-bold">Method: </span>
               {order.paymentMethod}
             </p>
-            {order.paymentMethod === 'Cash on Delivery' ? (
-              <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded text-sm">
-                Pay on Delivery
-              </div>
-            ) : order.paymentMethod === 'In-App Wallet Balance' ? (
+            {order.paymentMethod === 'In-App Wallet Balance' ? (
                <div className="bg-purple-100 border border-purple-400 text-purple-700 px-4 py-3 rounded text-sm">
                 Paid from Wallet
               </div>
@@ -254,18 +250,14 @@ const OrderScreen = () => {
               </div>
             </div>
 
-            {!order.isPaid && order.paymentMethod !== 'Cash on Delivery' && order.paymentMethod !== 'In-App Wallet Balance' && (
+            {!order.isPaid && order.paymentMethod !== 'In-App Wallet Balance' && (
               <div className="mt-8 border-t pt-6">
                 <h3 className="font-bold text-gray-700 mb-4">Complete Payment</h3>
                 <FlutterwaveCheckout orderId={orderId} amount={order.totalPrice} onSuccess={handlePaymentSuccess} />
               </div>
             )}
             
-            {order.paymentMethod === 'Cash on Delivery' && !order.isPaid && (
-              <div className="mt-8 border-t pt-6">
-                <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded border">Please have exact change ready for the delivery rider.</p>
-              </div>
-            )}
+
           </div>
         </div>
       </div>

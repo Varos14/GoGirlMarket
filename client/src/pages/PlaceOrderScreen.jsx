@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import CheckoutSteps from '../components/CheckoutSteps';
@@ -209,14 +209,7 @@ const PlaceOrderScreen = () => {
               )}
             </button>
             
-            {cart.paymentMethod === 'Cash on Delivery' ? (
-              <div className="flex items-center justify-center gap-2 text-blue-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                <div className="text-xs">
-                  <p className="font-bold uppercase tracking-wider">Pay on Delivery</p>
-                  <p className="text-blue-700">Have exact change ready</p>
-                </div>
-              </div>
-            ) : cart.paymentMethod === 'In-App Wallet Balance' ? (
+            {cart.paymentMethod === 'In-App Wallet Balance' ? (
               <div className="flex items-center justify-center gap-2 text-purple-600 bg-purple-50 p-3 rounded-lg border border-purple-100">
                 <ShieldCheck size={20} />
                 <div className="text-xs">

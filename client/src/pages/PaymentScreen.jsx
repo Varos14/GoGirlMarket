@@ -62,17 +62,7 @@ const PaymentScreen = () => {
               />
               <span className="font-bold text-lg">Credit Card (Visa/Mastercard)</span>
             </label>
-            <label className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-              <input
-                type="radio"
-                name="paymentMethod"
-                value="Cash on Delivery"
-                checked={paymentMethod === 'Cash on Delivery'}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                className="w-5 h-5 text-primary"
-              />
-              <span className="font-bold text-lg">Cash on Delivery</span>
-            </label>
+
             <label className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
               <input
                 type="radio"
