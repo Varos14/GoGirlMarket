@@ -17,7 +17,7 @@ const FlutterwaveCheckout = ({ orderId, amount, onSuccess }) => {
       
       const config = {
         headers: {
-          Authorization: `Bearer ${userInfo.token}`,
+          Authorization: `Bearer ${userInfo?.token}`,
         },
       };
 
@@ -35,7 +35,7 @@ const FlutterwaveCheckout = ({ orderId, amount, onSuccess }) => {
           id: 'FLW_' + Math.random().toString(36).substr(2, 9),
           status: 'successful',
           update_time: new Date().toISOString(),
-          email_address: userInfo.email,
+          email_address: userInfo?.email,
         };
         
         onSuccess(mockPaymentResult);
@@ -66,7 +66,7 @@ const FlutterwaveCheckout = ({ orderId, amount, onSuccess }) => {
         {processing ? (
           <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
         ) : (
-          `Pay UGX ${amount.toLocaleString()} with Flutterwave`
+          `Pay UGX ${amount?.toLocaleString()} with Flutterwave`
         )}
       </button>
     </div>
@@ -181,7 +181,7 @@ const OrderScreen = () => {
                       )}
                     </div>
                     <ul className="divide-y divide-gray-200 bg-white rounded shadow-sm px-4">
-                      {vendorOrder.items.map((item, index) => (
+                      {vendorOrder.items?.map((item, index) => (
                         <li key={index} className="py-4 flex gap-4 items-center">
                           <div className="w-16 h-16 bg-surface rounded-md flex-shrink-0 flex items-center justify-center overflow-hidden border border-gray-100">
                             {item.image ? (
@@ -194,7 +194,7 @@ const OrderScreen = () => {
                             {item.name}
                           </Link>
                           <div className="font-bold text-gray-700 whitespace-nowrap">
-                            {item.qty} x UGX {item.price.toLocaleString()} = UGX {(item.qty * item.price).toLocaleString()}
+                            {item.qty} x UGX {item.price?.toLocaleString()} = UGX {(item.qty * item.price)?.toLocaleString()}
                           </div>
                         </li>
                       ))}
@@ -204,7 +204,7 @@ const OrderScreen = () => {
               </div>
             ) : (
               <ul className="divide-y divide-gray-100">
-                {order.orderItems.map((item, index) => (
+                {order.orderItems?.map((item, index) => (
                   <li key={index} className="py-4 flex gap-4 items-center">
                     <div className="w-16 h-16 bg-surface rounded-md flex-shrink-0 flex items-center justify-center overflow-hidden border border-gray-100">
                       {item.image ? (
@@ -217,7 +217,7 @@ const OrderScreen = () => {
                       {item.name}
                     </Link>
                     <div className="font-bold text-gray-700 whitespace-nowrap">
-                      {item.qty} x UGX {item.price.toLocaleString()} = UGX {(item.qty * item.price).toLocaleString()}
+                      {item.qty} x UGX {item.price?.toLocaleString()} = UGX {(item.qty * item.price)?.toLocaleString()}
                     </div>
                   </li>
                 ))}
