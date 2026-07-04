@@ -4,7 +4,7 @@ const initialState = {
   cartItems: [],
   shippingAddress: {},
   paymentMethod: 'MTN Mobile Money',
-  appliedCoupons: [], // { vendorId, code, discountType, discountValue }
+  appliedCoupons: [], // { couponId, vendor, code, discountType, discountValue, maxDiscountAmount, applicableProducts }
 };
 
 const cartSlice = createSlice({
@@ -37,7 +37,7 @@ const cartSlice = createSlice({
       state.appliedCoupons = [];
     },
     applyCoupon: (state, action) => {
-      const coupon = action.payload; // { vendor, code, discountType, discountValue }
+      const coupon = action.payload; // { couponId, vendor, code, discountType, discountValue, maxDiscountAmount, applicableProducts }
       // Remove any existing coupon for this vendor
       state.appliedCoupons = state.appliedCoupons.filter(c => c.vendor !== coupon.vendor);
       state.appliedCoupons.push(coupon);

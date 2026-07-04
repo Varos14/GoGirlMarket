@@ -10,12 +10,14 @@ const PlaceOrderScreen = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const cart = useSelector((state) => state.cart);
+  const { userInfo } = useSelector((state) => state.auth);
 
   const orderCreate = useSelector((state) => state.order);
   const { order, success, error, loading } = orderCreate;
 
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState('');
+  const [couponSuccess, setCouponSuccess] = useState('');
   const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   // Calculate prices
@@ -27,21 +29,44 @@ const PlaceOrderScreen = () => {
     cart.cartItems.reduce((acc, item) => acc + item.price * item.qty, 0)
   );
   
-  // Calculate total discount from applied coupons
-  const totalDiscount = cart.appliedCoupons?.reduce((total, coupon) => {
-    // get items for this vendor
+  // Calculate total discount from applied coupons (with product scoping + max cap)
+  const discountDetails = (cart.appliedCoupons || []).map(coupon => {
+    // Get items for this vendor
     const vendorItems = cart.cartItems.filter(item => item.vendor === coupon.vendor);
-    const vendorSubtotal = vendorItems.reduce((acc, item) => acc + item.price * item.qty, 0);
+    
+    // Filter to eligible items if product scoping is active
+    let eligibleItems = vendorItems;
+    if (coupon.applicableProducts && coupon.applicableProducts.length > 0) {
+      eligibleItems = vendorItems.filter(item => 
+        coupon.applicableProducts.includes(item.product)
+      );
+    }
+
+    const eligibleSubtotal = eligibleItems.reduce((acc, item) => acc + item.price * item.qty, 0);
     
     let discount = 0;
     if (coupon.discountType === 'percentage') {
-      discount = vendorSubtotal * (coupon.discountValue / 100);
+      discount = eligibleSubtotal * (coupon.discountValue / 100);
+      // Apply max discount cap for percentage coupons
+      if (coupon.maxDiscountAmount && coupon.maxDiscountAmount > 0) {
+        discount = Math.min(discount, coupon.maxDiscountAmount);
+      }
     } else {
       discount = coupon.discountValue;
     }
     
-    return total + Math.min(discount, vendorSubtotal);
-  }, 0) || 0;
+    discount = Math.min(Math.round(discount), eligibleSubtotal);
+
+    return {
+      ...coupon,
+      eligibleCount: eligibleItems.length,
+      totalVendorItems: vendorItems.length,
+      isScoped: coupon.applicableProducts && coupon.applicableProducts.length > 0,
+      discount
+    };
+  });
+
+  const totalDiscount = discountDetails.reduce((total, d) => total + d.discount, 0);
 
   const itemsPriceAfterDiscount = itemsPrice - totalDiscount;
 
@@ -78,7 +103,10 @@ const PlaceOrderScreen = () => {
         shippingPrice: shippingPrice,
         taxPrice: taxPrice,
         totalPrice: totalPrice,
-        appliedCoupons: cart.appliedCoupons || []
+        appliedCoupons: (cart.appliedCoupons || []).map(c => ({
+          ...c,
+          couponId: c.couponId || c._id  // Ensure couponId is passed for usage recording
+        }))
       })
     );
   };
@@ -89,9 +117,15 @@ const PlaceOrderScreen = () => {
     
     setValidatingCoupon(true);
     setCouponError('');
+    setCouponSuccess('');
     
     try {
-      const response = await fetch(`/api/coupons/validate/${couponCode}`);
+      // Protected route — pass auth token
+      const response = await fetch(`/api/coupons/validate/${couponCode}`, {
+        headers: {
+          'Authorization': `Bearer ${userInfo?.token}`
+        }
+      });
       const data = await response.json();
       
       if (!response.ok) {
@@ -99,12 +133,48 @@ const PlaceOrderScreen = () => {
       }
       
       // Check if we have items from this vendor
-      const hasVendorItems = cart.cartItems.some(item => item.vendor === data.vendor);
-      if (!hasVendorItems) {
+      const vendorItems = cart.cartItems.filter(item => item.vendor === data.vendor);
+      if (vendorItems.length === 0) {
         throw new Error('This coupon is not valid for any items in your cart');
       }
+
+      // Check if coupon is product-scoped and any eligible items exist
+      let eligibleItems = vendorItems;
+      if (data.applicableProducts && data.applicableProducts.length > 0) {
+        eligibleItems = vendorItems.filter(item => 
+          data.applicableProducts.includes(item.product)
+        );
+        if (eligibleItems.length === 0) {
+          throw new Error('This coupon is not valid for the products in your cart');
+        }
+      }
+
+      // Check minimum order amount against eligible items
+      if (data.minOrderAmount && data.minOrderAmount > 0) {
+        const eligibleTotal = eligibleItems.reduce((acc, item) => acc + item.price * item.qty, 0);
+        if (eligibleTotal < data.minOrderAmount) {
+          throw new Error(`Minimum order of UGX ${data.minOrderAmount.toLocaleString()} required for this coupon`);
+        }
+      }
       
-      dispatch({ type: 'cart/applyCoupon', payload: data });
+      // Store full coupon data including new fields
+      dispatch({ type: 'cart/applyCoupon', payload: {
+        couponId: data._id,
+        vendor: data.vendor,
+        code: data.code,
+        discountType: data.discountType,
+        discountValue: data.discountValue,
+        maxDiscountAmount: data.maxDiscountAmount || 0,
+        applicableProducts: data.applicableProducts || []
+      }});
+
+      // Build success message
+      if (data.applicableProducts && data.applicableProducts.length > 0) {
+        setCouponSuccess(`${data.code} applied to ${eligibleItems.length} of ${vendorItems.length} item(s)`);
+      } else {
+        setCouponSuccess(`${data.code} applied successfully!`);
+      }
+
       setCouponCode('');
     } catch (err) {
       setCouponError(err.message);
@@ -177,7 +247,7 @@ const PlaceOrderScreen = () => {
                 <span className="font-semibold">UGX {Number(itemsPrice).toLocaleString()}</span>
               </div>
               
-              {cart.appliedCoupons && cart.appliedCoupons.length > 0 && (
+              {discountDetails.length > 0 && (
                 <div className="flex justify-between text-green-600 font-bold">
                   <span>Discount</span>
                   <span>- UGX {Number(totalDiscount).toLocaleString()}</span>
@@ -246,16 +316,27 @@ const PlaceOrderScreen = () => {
                 </button>
               </form>
               {couponError && <p className="text-red-500 text-xs mt-2">{couponError}</p>}
+              {couponSuccess && <p className="text-green-600 text-xs mt-2 font-semibold">{couponSuccess}</p>}
               
-              {cart.appliedCoupons && cart.appliedCoupons.length > 0 && (
+              {discountDetails.length > 0 && (
                 <div className="mt-3 space-y-2">
-                  {cart.appliedCoupons.map((c, idx) => (
+                  {discountDetails.map((c, idx) => (
                     <div key={idx} className="flex justify-between items-center bg-green-50 border border-green-100 px-3 py-2 rounded-lg">
                       <div>
                         <span className="text-xs font-bold text-green-700 bg-green-200 px-2 py-0.5 rounded">{c.code}</span>
                         <span className="text-xs text-green-600 ml-2">
-                          {c.discountType === 'percentage' ? `${c.discountValue}% off` : `UGX ${c.discountValue} off`}
+                          {c.discountType === 'percentage' ? `${c.discountValue}% off` : `UGX ${c.discountValue.toLocaleString()} off`}
                         </span>
+                        {c.isScoped && (
+                          <span className="block text-[10px] text-green-500 mt-0.5">
+                            Applied to {c.eligibleCount} of {c.totalVendorItems} item(s) — UGX {c.discount.toLocaleString()} off
+                          </span>
+                        )}
+                        {!c.isScoped && c.maxDiscountAmount > 0 && c.discountType === 'percentage' && (
+                          <span className="block text-[10px] text-green-500 mt-0.5">
+                            Max discount: UGX {c.maxDiscountAmount.toLocaleString()}
+                          </span>
+                        )}
                       </div>
                       <button 
                         type="button" 

@@ -2,6 +2,8 @@ const Order = require('../models/Order');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const Transaction = require('../models/Transaction');
+const Coupon = require('../models/Coupon');
+const { recordCouponUsage } = require('./couponController');
 const sendEmail = require('../utils/sendEmail');
 const { sendWhatsAppMessage } = require('../utils/twilioUtils');
 const notifications = require('../utils/notifications');
@@ -60,24 +62,60 @@ const addOrderItems = async (req, res) => {
         });
       }
 
-      // 3. Apply Coupons to vendor groups
+      // 3. Apply Coupons to vendor groups (with server-side enforcement)
+      const couponUsageRecords = []; // Track for post-save usage recording
+
       for (const coupon of appliedCoupons) {
         if (vendorGroups[coupon.vendor]) {
           const group = vendorGroups[coupon.vendor];
-          const groupItemsTotal = group.items.reduce((acc, item) => acc + item.price * item.qty, 0);
           
+          // Look up the actual coupon from the database for server-side validation
+          let couponDoc = null;
+          if (coupon.couponId) {
+            couponDoc = await Coupon.findById(coupon.couponId);
+          }
+
+          // Determine which items are eligible for this coupon
+          let eligibleItems = group.items;
+          if (couponDoc && couponDoc.applicableProducts && couponDoc.applicableProducts.length > 0) {
+            const applicableIds = couponDoc.applicableProducts.map(p => p.toString());
+            eligibleItems = group.items.filter(item => applicableIds.includes(item.product.toString()));
+          }
+
+          if (eligibleItems.length === 0) continue; // No eligible items, skip this coupon
+
+          const eligibleTotal = eligibleItems.reduce((acc, item) => acc + item.price * item.qty, 0);
+
+          // Enforce minimum order amount
+          if (couponDoc && couponDoc.minOrderAmount > 0 && eligibleTotal < couponDoc.minOrderAmount) {
+            continue; // Skip — doesn't meet minimum
+          }
+
           let discountAmt = 0;
           if (coupon.discountType === 'percentage') {
-            discountAmt = groupItemsTotal * (coupon.discountValue / 100);
+            discountAmt = eligibleTotal * (coupon.discountValue / 100);
+            // Enforce max discount cap for percentage coupons
+            if (couponDoc && couponDoc.maxDiscountAmount > 0) {
+              discountAmt = Math.min(discountAmt, couponDoc.maxDiscountAmount);
+            }
           } else {
             discountAmt = coupon.discountValue;
           }
           
-          // Make sure discount doesn't exceed item total
-          discountAmt = Math.min(discountAmt, groupItemsTotal);
+          // Make sure discount doesn't exceed eligible item total
+          discountAmt = Math.min(discountAmt, eligibleTotal);
           
-          group.discountAmount = discountAmt;
+          group.discountAmount = Math.round(discountAmt);
           group.couponCode = coupon.code;
+
+          // Queue for usage recording after order is saved
+          if (coupon.couponId) {
+            couponUsageRecords.push({
+              couponId: coupon.couponId,
+              userId: req.user._id,
+              discountAmount: Math.round(discountAmt)
+            });
+          }
         }
       }
 
@@ -100,6 +138,11 @@ const addOrderItems = async (req, res) => {
       });
 
       const createdOrder = await order.save();
+
+      // Record coupon usage for analytics (async, non-blocking)
+      for (const record of couponUsageRecords) {
+        recordCouponUsage(record.couponId, record.userId, record.discountAmount);
+      }
       
       // Async notifications via utility
       notifications.sendOrderPlaced(req.user, createdOrder);
