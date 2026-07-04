@@ -49,7 +49,8 @@ const PlaceOrderScreen = () => {
   const uniqueVendors = [...new Set(cart.cartItems.map(item => item.vendor).filter(Boolean))];
   const numVendors = uniqueVendors.length > 0 ? uniqueVendors.length : 1; // Default to 1 if missing for some reason
 
-  const shippingPrice = itemsPriceAfterDiscount > 100000 ? 0 : 5000 * numVendors; // 5000 UGX per vendor
+  // Shipping price is now 0 as it is negotiated and paid on delivery
+  const shippingPrice = 0;
   
   const taxPrice = addDecimals(Number((0.15 * itemsPriceAfterDiscount).toFixed(0))); // 15% tax
   const totalPrice = (
@@ -183,8 +184,8 @@ const PlaceOrderScreen = () => {
               )}
               
               <div className="flex justify-between text-gray-600 mb-2">
-                  <span>Shipping ({numVendors} vendor{numVendors > 1 ? 's' : ''})</span>
-                  <span className="font-medium">UGX {shippingPrice.toLocaleString()}</span>
+                  <span>Shipping</span>
+                  <span className="font-medium text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Calculated & Paid on Delivery</span>
                 </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Tax</span>

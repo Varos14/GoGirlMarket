@@ -44,7 +44,7 @@ const addOrderItems = async (req, res) => {
           vendorGroups[vendorId] = {
             vendor: vendorId,
             items: [],
-            shippingPrice: 5000, // Fixed shipping per vendor
+            shippingPrice: 0, // Shipping is paid off-platform on delivery
             discountAmount: 0,
             couponCode: null,
             isDelivered: false
@@ -346,9 +346,9 @@ const updateOrderToDelivered = async (req, res) => {
         
         const commissionRate = vendorDetails.commissionRate ?? 7;
         
-        // The vendor keeps (100 - commissionRate)% of the item total + 100% of shipping.
-        // Important: platform cut is calculated BEFORE shipping is added.
-        const platformCut = (vendorItemsTotal - vendorOrder.shippingPrice) * (commissionRate / 100);
+        // The vendor keeps (100 - commissionRate)% of the item total
+        // Important: platform cut is calculated BEFORE shipping is added (which is now 0 anyway).
+        const platformCut = vendorItemsTotal * (commissionRate / 100);
         const payoutAmount = vendorItemsTotal - platformCut;
 
         // Initialize wallet if it doesn't exist

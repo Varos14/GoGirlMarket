@@ -169,7 +169,7 @@ const OrderScreen = () => {
                 {order.vendorOrders.map((vendorOrder, vIndex) => (
                   <div key={vIndex} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                     <div className="flex justify-between items-center mb-4 border-b border-gray-200 pb-2">
-                      <h3 className="font-bold text-gray-800">Package {vIndex + 1} <span className="text-sm font-normal text-gray-500">(Shipping: UGX {vendorOrder.shippingPrice?.toLocaleString()})</span></h3>
+                      <h3 className="font-bold text-gray-800">Package {vIndex + 1} <span className="text-sm font-normal text-blue-600">(Shipping: Paid on Delivery)</span></h3>
                       {vendorOrder.isDelivered ? (
                         <span className="bg-green-100 border border-green-400 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
                           Delivered on {vendorOrder.deliveredAt?.substring(0, 10)}
@@ -238,7 +238,7 @@ const OrderScreen = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Shipping</span>
-                <span className="font-semibold">UGX {order.shippingPrice.toLocaleString()}</span>
+                <span className="font-medium text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">Paid on Delivery</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Tax</span>
