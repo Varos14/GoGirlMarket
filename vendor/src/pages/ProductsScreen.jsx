@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { PackagePlus, Upload, Image as ImageIcon, Trash2, Edit, Star, FileSpreadsheet, TrendingUp, Zap } from 'lucide-react';
+import { PackagePlus, Upload, Image as ImageIcon, Trash2, Edit, Star, FileSpreadsheet, TrendingUp, Zap, X } from 'lucide-react';
 
 const ProductsScreen = () => {
   const [products, setProducts] = useState([]);
@@ -27,6 +27,15 @@ const ProductsScreen = () => {
   const [uploadingCsv, setUploadingCsv] = useState(false);
   const [csvError, setCsvError] = useState('');
   const [csvSuccess, setCsvSuccess] = useState('');
+
+  // Modal State
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [modalImageFile, setModalImageFile] = useState(null);
+  const [modalImageUrl, setModalImageUrl] = useState('');
+  const [modalUploading, setModalUploading] = useState(false);
+  const [modalError, setModalError] = useState('');
+  const [modalLoading, setModalLoading] = useState(false);
 
   const fetchProducts = async () => {
     try {
@@ -214,6 +223,77 @@ const ProductsScreen = () => {
     }
   };
 
+  const openImageModal = (product) => {
+    setSelectedProduct(product);
+    setModalImageUrl(product.images && product.images.length > 0 ? product.images[0] : '');
+    setModalImageFile(null);
+    setModalError('');
+    setIsImageModalOpen(true);
+  };
+
+  const closeImageModal = () => {
+    setIsImageModalOpen(false);
+    setSelectedProduct(null);
+    setModalImageUrl('');
+    setModalImageFile(null);
+  };
+
+  const modalUploadFileHandler = async (e) => {
+    const file = e.target.files[0];
+    setModalImageFile(file);
+    const formData = new FormData();
+    formData.append('image', file);
+    setModalUploading(true);
+    setModalError('');
+
+    try {
+      const vendorInfo = JSON.parse(localStorage.getItem('vendorInfo'));
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${vendorInfo.token}`,
+        },
+      };
+
+      const { data } = await axios.post('/api/upload', formData, config);
+      setModalImageUrl(data.url);
+      setModalUploading(false);
+    } catch (error) {
+      console.error(error);
+      setModalUploading(false);
+      setModalError(error.response?.data?.message || 'Image upload failed');
+    }
+  };
+
+  const modalSubmitHandler = async () => {
+    if (!selectedProduct || !modalImageUrl) return;
+    setModalLoading(true);
+    setModalError('');
+
+    try {
+      const vendorInfo = JSON.parse(localStorage.getItem('vendorInfo'));
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${vendorInfo.token}`,
+        },
+      };
+
+      await axios.put(`/api/products/${selectedProduct._id}`, { images: [modalImageUrl] }, config);
+
+      setModalLoading(false);
+      closeImageModal();
+      fetchProducts();
+    } catch (error) {
+      setModalLoading(false);
+      setModalError(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+    }
+  };
+
   return (
     <div className="flex flex-col lg:flex-row gap-8">
       {/* Left Col: Product List */}
@@ -338,6 +418,9 @@ const ProductsScreen = () => {
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right flex justify-end gap-2">
+                        <button onClick={() => openImageModal(product)} className="text-gray-400 hover:text-blue-500 transition-colors p-2 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100" title="Edit Image">
+                          <ImageIcon size={18} />
+                        </button>
                         <button onClick={() => sponsorHandler(product._id)} className={`transition-colors p-2 rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100 ${product.isSponsored ? 'text-indigo-600 hover:bg-indigo-50' : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50'}`} title={product.isSponsored ? "Stop Sponsoring" : "Sponsor Product"}>
                           <TrendingUp size={18} />
                         </button>
@@ -475,6 +558,59 @@ const ProductsScreen = () => {
           </form>
         </div>
       </div>
+
+      {/* Image Edit Modal */}
+      {isImageModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden relative">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <h3 className="text-lg font-bold text-gray-800">
+                Edit Image: {selectedProduct?.name}
+              </h3>
+              <button onClick={closeImageModal} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {modalError && <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-lg mb-4 text-sm font-medium">{modalError}</div>}
+              
+              <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 transition-colors group cursor-pointer relative">
+                {modalImageUrl ? (
+                  <div className="relative w-full flex justify-center">
+                    <img src={modalImageUrl} alt="Preview" className="h-40 w-40 object-cover rounded-xl shadow-sm border border-gray-200" />
+                    <button type="button" onClick={(e) => { e.preventDefault(); setModalImageUrl(''); }} className="absolute -top-3 -right-3 sm:right-[15%] bg-red-500 text-white rounded-full p-1.5 shadow-md hover:bg-red-600 transition-colors z-10">
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="h-12 w-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                      <ImageIcon size={20} className="text-gray-400" />
+                    </div>
+                    <span className="text-sm font-semibold text-gray-600">{modalUploading ? 'Uploading...' : 'Click to Upload Image'}</span>
+                    <span className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP up to 5MB</span>
+                    <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={modalUploadFileHandler} accept="image/*" />
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3 p-6 bg-gray-50/50 border-t border-gray-100">
+              <button onClick={closeImageModal} className="flex-1 px-4 py-2.5 rounded-xl font-bold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+              <button 
+                onClick={modalSubmitHandler}
+                disabled={modalUploading || modalLoading || !modalImageUrl}
+                className="flex-1 px-4 py-2.5 rounded-xl font-bold text-white bg-gray-900 hover:bg-gray-800 transition-colors disabled:opacity-50"
+              >
+                {modalLoading ? 'Saving...' : 'Save Image'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
