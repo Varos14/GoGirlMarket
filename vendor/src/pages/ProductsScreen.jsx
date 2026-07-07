@@ -28,14 +28,23 @@ const ProductsScreen = () => {
   const [csvError, setCsvError] = useState('');
   const [csvSuccess, setCsvSuccess] = useState('');
 
-  // Modal State
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  // Edit Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [modalImageFile, setModalImageFile] = useState(null);
-  const [modalImageUrl, setModalImageUrl] = useState('');
-  const [modalUploading, setModalUploading] = useState(false);
-  const [modalError, setModalError] = useState('');
-  const [modalLoading, setModalLoading] = useState(false);
+  
+  const [editName, setEditName] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editBrand, setEditBrand] = useState('');
+  const [editCountInStock, setEditCountInStock] = useState('');
+  
+  const [editImageFile, setEditImageFile] = useState(null);
+  const [editImageUrl, setEditImageUrl] = useState('');
+  const [editUploading, setEditUploading] = useState(false);
+  
+  const [editError, setEditError] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
 
   const fetchProducts = async () => {
     try {
@@ -223,28 +232,34 @@ const ProductsScreen = () => {
     }
   };
 
-  const openImageModal = (product) => {
+  const openEditModal = (product) => {
     setSelectedProduct(product);
-    setModalImageUrl(product.images && product.images.length > 0 ? product.images[0] : '');
-    setModalImageFile(null);
-    setModalError('');
-    setIsImageModalOpen(true);
+    setEditName(product.name || '');
+    setEditPrice(product.price || '');
+    setEditDescription(product.description || '');
+    setEditCategory(product.category || '');
+    setEditBrand(product.brand || '');
+    setEditCountInStock(product.countInStock || '');
+    setEditImageUrl(product.images && product.images.length > 0 ? product.images[0] : '');
+    setEditImageFile(null);
+    setEditError('');
+    setIsEditModalOpen(true);
   };
 
-  const closeImageModal = () => {
-    setIsImageModalOpen(false);
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
     setSelectedProduct(null);
-    setModalImageUrl('');
-    setModalImageFile(null);
+    setEditImageUrl('');
+    setEditImageFile(null);
   };
 
-  const modalUploadFileHandler = async (e) => {
+  const editUploadFileHandler = async (e) => {
     const file = e.target.files[0];
-    setModalImageFile(file);
+    setEditImageFile(file);
     const formData = new FormData();
     formData.append('image', file);
-    setModalUploading(true);
-    setModalError('');
+    setEditUploading(true);
+    setEditError('');
 
     try {
       const vendorInfo = JSON.parse(localStorage.getItem('vendorInfo'));
@@ -256,19 +271,20 @@ const ProductsScreen = () => {
       };
 
       const { data } = await axios.post('/api/upload', formData, config);
-      setModalImageUrl(data.url);
-      setModalUploading(false);
+      setEditImageUrl(data.url);
+      setEditUploading(false);
     } catch (error) {
       console.error(error);
-      setModalUploading(false);
-      setModalError(error.response?.data?.message || 'Image upload failed');
+      setEditUploading(false);
+      setEditError(error.response?.data?.message || 'Image upload failed');
     }
   };
 
-  const modalSubmitHandler = async () => {
-    if (!selectedProduct || !modalImageUrl) return;
-    setModalLoading(true);
-    setModalError('');
+  const editSubmitHandler = async (e) => {
+    if (e) e.preventDefault();
+    if (!selectedProduct) return;
+    setEditLoading(true);
+    setEditError('');
 
     try {
       const vendorInfo = JSON.parse(localStorage.getItem('vendorInfo'));
@@ -279,14 +295,24 @@ const ProductsScreen = () => {
         },
       };
 
-      await axios.put(`/api/products/${selectedProduct._id}`, { images: [modalImageUrl] }, config);
+      const productData = {
+        name: editName,
+        price: Number(editPrice),
+        description: editDescription,
+        category: editCategory,
+        brand: editBrand,
+        countInStock: Number(editCountInStock),
+        images: editImageUrl ? [editImageUrl] : [],
+      };
 
-      setModalLoading(false);
-      closeImageModal();
+      await axios.put(`/api/products/${selectedProduct._id}`, productData, config);
+
+      setEditLoading(false);
+      closeEditModal();
       fetchProducts();
     } catch (error) {
-      setModalLoading(false);
-      setModalError(
+      setEditLoading(false);
+      setEditError(
         error.response && error.response.data.message
           ? error.response.data.message
           : error.message
@@ -418,8 +444,8 @@ const ProductsScreen = () => {
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right flex justify-end gap-2">
-                        <button onClick={() => openImageModal(product)} className="text-gray-400 hover:text-blue-500 transition-colors p-2 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100" title="Edit Image">
-                          <ImageIcon size={18} />
+                        <button onClick={() => openEditModal(product)} className="text-gray-400 hover:text-blue-500 transition-colors p-2 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100" title="Edit Product">
+                          <Edit size={18} />
                         </button>
                         <button onClick={() => sponsorHandler(product._id)} className={`transition-colors p-2 rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100 ${product.isSponsored ? 'text-indigo-600 hover:bg-indigo-50' : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50'}`} title={product.isSponsored ? "Stop Sponsoring" : "Sponsor Product"}>
                           <TrendingUp size={18} />
@@ -559,53 +585,128 @@ const ProductsScreen = () => {
         </div>
       </div>
 
-      {/* Image Edit Modal */}
-      {isImageModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden relative">
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-800">
-                Edit Image: {selectedProduct?.name}
+      {/* Full Product Edit Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden relative my-8">
+            <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-white sticky top-0 z-10">
+              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <Edit size={20} className="text-primary" />
+                Edit Product
               </h3>
-              <button onClick={closeImageModal} className="text-gray-400 hover:text-gray-600 transition-colors">
+              <button onClick={closeEditModal} className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100">
                 <X size={20} />
               </button>
             </div>
             
-            <div className="p-6">
-              {modalError && <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-lg mb-4 text-sm font-medium">{modalError}</div>}
+            <div className="p-6 max-h-[70vh] overflow-y-auto">
+              {editError && <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm font-medium">{editError}</div>}
               
-              <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 transition-colors group cursor-pointer relative">
-                {modalImageUrl ? (
-                  <div className="relative w-full flex justify-center">
-                    <img src={modalImageUrl} alt="Preview" className="h-40 w-40 object-cover rounded-xl shadow-sm border border-gray-200" />
-                    <button type="button" onClick={(e) => { e.preventDefault(); setModalImageUrl(''); }} className="absolute -top-3 -right-3 sm:right-[15%] bg-red-500 text-white rounded-full p-1.5 shadow-md hover:bg-red-600 transition-colors z-10">
-                      <Trash2 size={14} />
-                    </button>
+              <form id="editProductForm" onSubmit={editSubmitHandler} className="space-y-5">
+                <div>
+                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Product Name</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800 placeholder-gray-400"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Price (UGX)</label>
+                    <input
+                      type="number"
+                      required
+                      className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800 placeholder-gray-400"
+                      value={editPrice}
+                      onChange={(e) => setEditPrice(e.target.value)}
+                    />
                   </div>
-                ) : (
-                  <>
-                    <div className="h-12 w-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                      <ImageIcon size={20} className="text-gray-400" />
-                    </div>
-                    <span className="text-sm font-semibold text-gray-600">{modalUploading ? 'Uploading...' : 'Click to Upload Image'}</span>
-                    <span className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP up to 5MB</span>
-                    <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={modalUploadFileHandler} accept="image/*" />
-                  </>
-                )}
-              </div>
+                  <div>
+                    <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Stock</label>
+                    <input
+                      type="number"
+                      required
+                      className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800 placeholder-gray-400"
+                      value={editCountInStock}
+                      onChange={(e) => setEditCountInStock(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Brand</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800 placeholder-gray-400"
+                      value={editBrand}
+                      onChange={(e) => setEditBrand(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Category</label>
+                    <input
+                      type="text"
+                      required
+                      className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800 placeholder-gray-400"
+                      value={editCategory}
+                      onChange={(e) => setEditCategory(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Description</label>
+                  <textarea
+                    required
+                    rows="3"
+                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800 placeholder-gray-400 resize-none"
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                  ></textarea>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Product Image</label>
+                  <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 transition-colors group cursor-pointer relative">
+                    {editImageUrl ? (
+                      <div className="relative w-full flex justify-center">
+                        <img src={editImageUrl} alt="Preview" className="h-32 w-32 object-cover rounded-xl shadow-sm border border-gray-200" />
+                        <button type="button" onClick={(e) => { e.preventDefault(); setEditImageUrl(''); }} className="absolute -top-3 -right-3 sm:right-1/3 bg-red-500 text-white rounded-full p-1.5 shadow-md hover:bg-red-600 transition-colors z-10">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="h-12 w-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                          <ImageIcon size={20} className="text-gray-400" />
+                        </div>
+                        <span className="text-sm font-semibold text-gray-600">{editUploading ? 'Uploading...' : 'Click to Upload Image'}</span>
+                        <span className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP up to 5MB</span>
+                        <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={editUploadFileHandler} accept="image/*" />
+                      </>
+                    )}
+                  </div>
+                </div>
+              </form>
             </div>
 
             <div className="flex gap-3 p-6 bg-gray-50/50 border-t border-gray-100">
-              <button onClick={closeImageModal} className="flex-1 px-4 py-2.5 rounded-xl font-bold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors">
+              <button onClick={closeEditModal} className="flex-1 px-4 py-2.5 rounded-xl font-bold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors">
                 Cancel
               </button>
               <button 
-                onClick={modalSubmitHandler}
-                disabled={modalUploading || modalLoading || !modalImageUrl}
+                type="submit"
+                form="editProductForm"
+                disabled={editUploading || editLoading}
                 className="flex-1 px-4 py-2.5 rounded-xl font-bold text-white bg-gray-900 hover:bg-gray-800 transition-colors disabled:opacity-50"
               >
-                {modalLoading ? 'Saving...' : 'Save Image'}
+                {editLoading ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </div>
