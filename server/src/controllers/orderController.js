@@ -234,36 +234,7 @@ const updateOrderToPaid = async (req, res) => {
   }
 };
 
-// @desc    Process Flutterwave Split Payment (Now using Escrow - no splits)
-// @route   POST /api/orders/:id/flutterwave
-// @access  Private
-const processFlutterwavePayment = async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id)
-      .populate('user', 'name email');
 
-    if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
-    }
-
-    // In the Escrow model, 100% of the funds go directly into the platform's main Flutterwave account.
-    // The funds are held in Escrow by the platform.
-    // When the vendor marks the order as delivered, the platform will trigger a payout/transfer to the vendor.
-
-    // Simulate API delay for generating the payment link
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    res.json({
-      success: true,
-      message: 'Escrow payment initialized successfully',
-      payment_url: `https://mock-flutterwave-checkout.com/pay/${order._id}`,
-      escrow_enabled: true
-    });
-
-  } catch (error) {
-    res.status(500).json({ message: 'Server Error', error: error.message });
-  }
-};
 
 // @desc    Get logged in user orders
 // @route   GET /api/orders/myorders
@@ -590,8 +561,11 @@ const processPesapalPayment = async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Pesapal process error:', error.response?.data || error.message);
-    res.status(500).json({ message: 'Pesapal Payment Processing Error', error: error.message });
+    console.error('Pesapal process error:', error.response?.data || error);
+    res.status(500).json({ 
+      message: 'Pesapal Payment Processing Error', 
+      error: error.response?.data?.error?.message || error.response?.data?.message || error.message 
+    });
   }
 };
 
@@ -679,7 +653,6 @@ module.exports = {
   getVendorOrders,
   updateOrderToDelivered,
   getDashboardStats,
-  processFlutterwavePayment,
   updateOrderStatus,
   processPesapalPayment,
   handlePesapalIPN,

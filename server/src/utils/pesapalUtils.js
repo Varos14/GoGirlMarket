@@ -4,10 +4,7 @@ const axios = require('axios');
  * Get Pesapal Base URL depending on environment
  */
 const getPesapalBaseUrl = () => {
-  const env = process.env.PESAPAL_ENV || 'sandbox';
-  return env === 'live'
-    ? 'https://pay.pesapal.com/v3'
-    : 'https://cyb3r.pesapal.com/pesapalv3';
+  return 'https://pay.pesapal.com/v3';
 };
 
 /**

@@ -9,7 +9,6 @@ const {
   getVendorOrders, 
   updateOrderToDelivered,
   getDashboardStats,
-  processFlutterwavePayment,
   updateOrderStatus,
   processPesapalPayment,
   handlePesapalIPN,
@@ -31,7 +30,6 @@ router.get('/myorders', protect, getMyOrders);
 router.get('/vendor', protect, vendor, getVendorOrders);
 router.route('/:id').get(protect, getOrderById);
 router.route('/:id/pay').put(protect, updateOrderToPaid);
-router.route('/:id/flutterwave').post(protect, processFlutterwavePayment);
 router.route('/:id/pesapal').post(protect, processPesapalPayment);
 router.route('/verify-pesapal/:orderTrackingId').get(protect, verifyPesapalPayment);
 router.put('/:id/deliver', protect, updateOrderToDelivered);
