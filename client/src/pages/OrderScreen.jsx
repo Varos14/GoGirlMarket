@@ -308,11 +308,7 @@ const OrderScreen = () => {
             {!order.isPaid && order.paymentMethod !== 'In-App Wallet Balance' && (
               <div className="mt-8 border-t pt-6">
                 <h3 className="font-bold text-gray-700 mb-4">Complete Payment</h3>
-                {order.paymentMethod === 'Pesapal' ? (
-                  <PesapalCheckout orderId={orderId} amount={order.totalPrice} />
-                ) : (
-                  <FlutterwaveCheckout orderId={orderId} amount={order.totalPrice} onSuccess={handlePaymentSuccess} />
-                )}
+                <PesapalCheckout orderId={orderId} amount={order.totalPrice} />
               </div>
             )}
             
