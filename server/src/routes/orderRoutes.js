@@ -10,9 +10,17 @@ const {
   updateOrderToDelivered,
   getDashboardStats,
   processFlutterwavePayment,
-  updateOrderStatus
+  updateOrderStatus,
+  processPesapalPayment,
+  handlePesapalIPN,
+  verifyPesapalPayment
 } = require('../controllers/orderController');
 const { protect, admin, vendor } = require('../middleware/authMiddleware');
+
+// Pesapal IPN Webhook Endpoint (Public, supports GET & POST)
+router.route('/pesapal-ipn')
+  .get(handlePesapalIPN)
+  .post(handlePesapalIPN);
 
 router.route('/')
   .post(protect, addOrderItems)
@@ -24,7 +32,10 @@ router.get('/vendor', protect, vendor, getVendorOrders);
 router.route('/:id').get(protect, getOrderById);
 router.route('/:id/pay').put(protect, updateOrderToPaid);
 router.route('/:id/flutterwave').post(protect, processFlutterwavePayment);
+router.route('/:id/pesapal').post(protect, processPesapalPayment);
+router.route('/verify-pesapal/:orderTrackingId').get(protect, verifyPesapalPayment);
 router.put('/:id/deliver', protect, updateOrderToDelivered);
 router.put('/:id/status', protect, admin, updateOrderStatus);
 
 module.exports = router;
+

@@ -75,12 +75,70 @@ const FlutterwaveCheckout = ({ orderId, amount, onSuccess }) => {
 
 
 
+const PesapalCheckout = ({ orderId, amount }) => {
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState(null);
+  const auth = useSelector((state) => state.auth);
+  const { userInfo } = auth || {};
+
+  const handlePesapalPayment = async () => {
+    try {
+      setProcessing(true);
+      setError(null);
+      
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo?.token}`,
+        },
+      };
+
+      const { data } = await axios.post(`/api/orders/${orderId}/pesapal`, {}, config);
+
+      if (data.redirect_url) {
+        // Redirect to Pesapal's secure checkout page
+        window.location.href = data.redirect_url;
+      } else {
+        setError('Failed to obtain Pesapal payment link.');
+        setProcessing(false);
+      }
+
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 space-y-4">
+      {error && <div className="text-red-500 text-sm mt-2 p-3 bg-red-50 border border-red-200 rounded">{error}</div>}
+      
+      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-4">
+        <p className="text-sm text-emerald-800">
+          <strong>Pesapal Hosted Payment:</strong> You will be redirected to Pesapal's secure gateway to complete payment using M-Pesa, Airtel Money, MTN Money, or Credit/Debit Card.
+        </p>
+      </div>
+
+      <button 
+        onClick={handlePesapalPayment}
+        disabled={processing}
+        className="w-full bg-[#00A859] hover:bg-[#008f4c] text-white font-bold py-4 rounded-xl flex justify-center items-center shadow-lg transition-colors"
+      >
+        {processing ? (
+          <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+        ) : (
+          `Pay UGX ${amount?.toLocaleString()} with Pesapal`
+        )}
+      </button>
+    </div>
+  );
+};
+
 const OrderScreen = () => {
   const { id: orderId } = useParams();
   const dispatch = useDispatch();
 
   const orderState = useSelector((state) => state.order);
-  const { order, loading, error, successPay, loadingPay } = orderState;
+  const { order, loading, error, successPay } = orderState;
 
   useEffect(() => {
     if (!order || order._id !== orderId || successPay) {
@@ -250,7 +308,11 @@ const OrderScreen = () => {
             {!order.isPaid && order.paymentMethod !== 'In-App Wallet Balance' && (
               <div className="mt-8 border-t pt-6">
                 <h3 className="font-bold text-gray-700 mb-4">Complete Payment</h3>
-                <FlutterwaveCheckout orderId={orderId} amount={order.totalPrice} onSuccess={handlePaymentSuccess} />
+                {order.paymentMethod === 'Pesapal' ? (
+                  <PesapalCheckout orderId={orderId} amount={order.totalPrice} />
+                ) : (
+                  <FlutterwaveCheckout orderId={orderId} amount={order.totalPrice} onSuccess={handlePaymentSuccess} />
+                )}
               </div>
             )}
             

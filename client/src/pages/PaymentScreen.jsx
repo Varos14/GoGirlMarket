@@ -13,7 +13,7 @@ const PaymentScreen = () => {
     navigate('/shipping');
   }
 
-  const [paymentMethod, setPaymentMethod] = useState('MTN Mobile Money');
+  const [paymentMethod, setPaymentMethod] = useState('Pesapal');
   const dispatch = useDispatch();
 
   const submitHandler = (e) => {
@@ -61,6 +61,21 @@ const PaymentScreen = () => {
                 className="w-5 h-5 text-primary"
               />
               <span className="font-bold text-lg">Credit Card (Visa/Mastercard)</span>
+            </label>
+
+            <label className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="Pesapal"
+                checked={paymentMethod === 'Pesapal'}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="w-5 h-5 text-primary"
+              />
+              <div className="flex flex-col">
+                <span className="font-bold text-lg">Pesapal (Mobile Money & Cards)</span>
+                <span className="text-xs text-gray-500">Pay via M-Pesa, Airtel Money, MTN Money, Visa or Mastercard</span>
+              </div>
             </label>
 
             <label className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">

@@ -512,6 +512,164 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
+// @desc    Process Pesapal v3 Payment Request
+// @route   POST /api/orders/:id/pesapal
+// @access  Private
+const processPesapalPayment = async (req, res) => {
+  try {
+    const pesapalUtils = require('../utils/pesapalUtils');
+    const order = await Order.findById(req.params.id).populate('user', 'name email phone');
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (order.isPaid) {
+      return res.status(400).json({ message: 'Order is already paid' });
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const callbackUrl = `${frontendUrl}/order/${order._id}`;
+    
+    // IPN notification ID registered with Pesapal
+    let ipnId = process.env.PESAPAL_IPN_ID;
+    
+    // If IPN ID is not set in env, auto-register IPN URL on the fly (for developer convenience)
+    if (!ipnId) {
+      try {
+        const backendDomain = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+        const ipnUrl = `${backendDomain}/api/orders/pesapal-ipn`;
+        const ipnRes = await pesapalUtils.registerPesapalIPN(ipnUrl);
+        ipnId = ipnRes.ipn_id;
+      } catch (ipnErr) {
+        console.warn('Could not auto-register Pesapal IPN URL:', ipnErr.message);
+      }
+    }
+
+    // Split name into first and last name for Pesapal billing requirements
+    const nameParts = (order.user?.name || 'Customer Name').split(' ');
+    const firstName = nameParts[0] || 'Customer';
+    const lastName = nameParts.slice(1).join(' ') || 'Customer';
+
+    const pesapalPayload = {
+      id: `${order._id}_${Date.now()}`,
+      currency: 'UGX', // Can be dynamically set or KES/UGX/TZS
+      amount: order.totalPrice,
+      description: `Payment for GoGirlMarket Order #${order._id}`,
+      callback_url: callbackUrl,
+      notification_id: ipnId || '',
+      billing_address: {
+        email_address: order.user?.email || 'customer@example.com',
+        phone_number: order.user?.phone || order.shippingAddress?.phone || '',
+        country_code: 'UG',
+        first_name: firstName,
+        middle_name: '',
+        last_name: lastName,
+        line_1: order.shippingAddress?.address || 'N/A',
+        line_2: '',
+        city: order.shippingAddress?.city || 'N/A',
+        state: '',
+        postal_code: '',
+        zip_code: ''
+      }
+    };
+
+    const pesapalResponse = await pesapalUtils.createPesapalOrder(pesapalPayload);
+
+    if (pesapalResponse && pesapalResponse.redirect_url) {
+      res.json({
+        success: true,
+        redirect_url: pesapalResponse.redirect_url,
+        order_tracking_id: pesapalResponse.order_tracking_id
+      });
+    } else {
+      res.status(400).json({
+        message: 'Failed to generate Pesapal payment link',
+        details: pesapalResponse
+      });
+    }
+
+  } catch (error) {
+    console.error('Pesapal process error:', error.response?.data || error.message);
+    res.status(500).json({ message: 'Pesapal Payment Processing Error', error: error.message });
+  }
+};
+
+// @desc    Handle Pesapal IPN (Instant Payment Notification Webhook)
+// @route   GET /api/orders/pesapal-ipn or POST /api/orders/pesapal-ipn
+// @access  Public
+const handlePesapalIPN = async (req, res) => {
+  try {
+    const pesapalUtils = require('../utils/pesapalUtils');
+    // Pesapal sends OrderTrackingId and OrderNotificationType in query parameters or body
+    const orderTrackingId = req.query.OrderTrackingId || req.body.OrderTrackingId;
+    const merchantReference = req.query.OrderMerchantReference || req.body.OrderMerchantReference;
+
+    if (!orderTrackingId) {
+      return res.status(400).json({ message: 'OrderTrackingId is required' });
+    }
+
+    // Verify actual payment status with Pesapal API
+    const statusData = await pesapalUtils.getPesapalTransactionStatus(orderTrackingId);
+    
+    // Extract actual order ID from merchantReference (e.g. "orderId_timestamp")
+    const orderId = merchantReference ? merchantReference.split('_')[0] : null;
+
+    if (orderId) {
+      const order = await Order.findById(orderId).populate('user', 'name email');
+
+      // Status code 1 = COMPLETED in Pesapal v3
+      if (order && statusData.status_code === 1 && !order.isPaid) {
+        order.isPaid = true;
+        order.paidAt = Date.now();
+        order.paymentResult = {
+          id: orderTrackingId,
+          status: 'COMPLETED',
+          update_time: new Date().toISOString(),
+          email_address: order.user?.email,
+          payment_method: statusData.payment_method || 'Pesapal'
+        };
+
+        await order.save();
+
+        // Send confirmation email
+        sendEmail({
+          to: order.user.email,
+          subject: `Payment Confirmed - Order ${order._id}`,
+          html: `<h1>Payment Successful!</h1><p>We received your Pesapal payment of ${statusData.currency || 'UGX'} ${order.totalPrice}. Your items will be shipped soon.</p>`
+        });
+      }
+    }
+
+    // Respond back to Pesapal to confirm receipt of IPN
+    res.status(200).json({
+      orderNotificationType: 'IPNCHANGE',
+      orderTrackingId: orderTrackingId,
+      status: '200'
+    });
+
+  } catch (error) {
+    console.error('Pesapal IPN Error:', error.message);
+    res.status(500).json({ message: 'IPN Handler Error', error: error.message });
+  }
+};
+
+// @desc    Verify Pesapal Payment Status (Client-initiated fallback)
+// @route   GET /api/orders/verify-pesapal/:orderTrackingId
+// @access  Private
+const verifyPesapalPayment = async (req, res) => {
+  try {
+    const pesapalUtils = require('../utils/pesapalUtils');
+    const { orderTrackingId } = req.params;
+
+    const statusData = await pesapalUtils.getPesapalTransactionStatus(orderTrackingId);
+    res.json(statusData);
+
+  } catch (error) {
+    res.status(500).json({ message: 'Error checking transaction status', error: error.message });
+  }
+};
+
 module.exports = {
   addOrderItems,
   getOrderById,
@@ -523,4 +681,8 @@ module.exports = {
   getDashboardStats,
   processFlutterwavePayment,
   updateOrderStatus,
+  processPesapalPayment,
+  handlePesapalIPN,
+  verifyPesapalPayment,
 };
+
