@@ -29,7 +29,41 @@ const PaymentScreen = () => {
         <h1 className="text-3xl font-heading font-bold mb-6">Payment Method</h1>
         <form onSubmit={submitHandler}>
           <div className="space-y-4 mb-8">
-            <label className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors border-primary bg-emerald-50/20">
+            <label className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="MTN Mobile Money"
+                checked={paymentMethod === 'MTN Mobile Money'}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="w-5 h-5 text-primary"
+              />
+              <span className="font-bold text-lg">MTN Mobile Money</span>
+            </label>
+            <label className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="Airtel Money"
+                checked={paymentMethod === 'Airtel Money'}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="w-5 h-5 text-primary"
+              />
+              <span className="font-bold text-lg">Airtel Money</span>
+            </label>
+            <label className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="Credit Card"
+                checked={paymentMethod === 'Credit Card'}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="w-5 h-5 text-primary"
+              />
+              <span className="font-bold text-lg">Credit Card (Visa/Mastercard)</span>
+            </label>
+
+            <label className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
               <input
                 type="radio"
                 name="paymentMethod"
@@ -39,8 +73,8 @@ const PaymentScreen = () => {
                 className="w-5 h-5 text-primary"
               />
               <div className="flex flex-col">
-                <span className="font-bold text-lg text-gray-900">Pesapal (Mobile Money & Cards)</span>
-                <span className="text-xs text-gray-500">Pay via M-Pesa, Airtel Money, MTN Mobile Money, Visa or Mastercard</span>
+                <span className="font-bold text-lg">Pesapal (Mobile Money & Cards)</span>
+                <span className="text-xs text-gray-500">Pay via M-Pesa, Airtel Money, MTN Money, Visa or Mastercard</span>
               </div>
             </label>
 
@@ -53,10 +87,7 @@ const PaymentScreen = () => {
                 onChange={(e) => setPaymentMethod(e.target.value)}
                 className="w-5 h-5 text-primary"
               />
-              <div className="flex flex-col">
-                <span className="font-bold text-lg text-gray-900">In-App Wallet Balance</span>
-                <span className="text-xs text-gray-500">Pay instantly from your GoGirlMarket store wallet balance</span>
-              </div>
+              <span className="font-bold text-lg">In-App Wallet Balance</span>
             </label>
           </div>
           <button type="submit" className="w-full btn-primary py-3 text-lg">

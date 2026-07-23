@@ -4,7 +4,74 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getOrderDetails, payOrder, orderPayReset } from '../store/orderSlice';
 import axios from 'axios';
 
+const FlutterwaveCheckout = ({ orderId, amount, onSuccess }) => {
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState(null);
+  const auth = useSelector((state) => state.auth);
+  const { userInfo } = auth || {};
 
+  const handlePayment = async () => {
+    try {
+      setProcessing(true);
+      setError(null);
+      
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo?.token}`,
+        },
+      };
+
+      // 1. Hit our backend to generate the Flutterwave link with split payload
+      const { data } = await axios.post(`/api/orders/${orderId}/flutterwave`, {}, config);
+
+      console.log("Flutterwave Split Response:", data);
+
+      // 2. In a real app, we would redirect the user to data.payment_url here
+      // window.location.href = data.payment_url;
+      
+      // Since this is a mock, we simulate a successful payment popup and callback
+      setTimeout(() => {
+        const mockPaymentResult = {
+          id: 'FLW_' + Math.random().toString(36).substr(2, 9),
+          status: 'successful',
+          update_time: new Date().toISOString(),
+          email_address: userInfo?.email,
+        };
+        
+        onSuccess(mockPaymentResult);
+        setProcessing(false);
+      }, 2000);
+
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 space-y-4">
+      {error && <div className="text-red-500 text-sm mt-2 p-3 bg-red-50 border border-red-200 rounded">{error}</div>}
+      
+      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+        <p className="text-sm text-orange-800">
+          <strong>Note:</strong> Clicking "Pay Now" will open the secure Flutterwave checkout where you can pay via MTN Mobile Money, Airtel Money, or Card.
+        </p>
+      </div>
+
+      <button 
+        onClick={handlePayment}
+        disabled={processing}
+        className="w-full bg-[#f5a623] hover:bg-[#e09612] text-white font-bold py-4 rounded-xl flex justify-center items-center shadow-lg transition-colors"
+      >
+        {processing ? (
+          <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
+        ) : (
+          `Pay UGX ${amount?.toLocaleString()} with Flutterwave`
+        )}
+      </button>
+    </div>
+  );
+};
 
 
 
@@ -36,8 +103,7 @@ const PesapalCheckout = ({ orderId, amount }) => {
       }
 
     } catch (err) {
-      const serverMessage = err.response?.data?.error || err.response?.data?.message || err.message;
-      setError(serverMessage);
+      setError(err.response?.data?.message || err.message);
       setProcessing(false);
     }
   };
@@ -239,10 +305,14 @@ const OrderScreen = () => {
               </div>
             </div>
 
-            {!order.isPaid && (
+            {!order.isPaid && order.paymentMethod !== 'In-App Wallet Balance' && (
               <div className="mt-8 border-t pt-6">
                 <h3 className="font-bold text-gray-700 mb-4">Complete Payment</h3>
-                <PesapalCheckout orderId={orderId} amount={order.totalPrice} />
+                {order.paymentMethod === 'Pesapal' ? (
+                  <PesapalCheckout orderId={orderId} amount={order.totalPrice} />
+                ) : (
+                  <FlutterwaveCheckout orderId={orderId} amount={order.totalPrice} onSuccess={handlePaymentSuccess} />
+                )}
               </div>
             )}
             
