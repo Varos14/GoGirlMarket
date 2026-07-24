@@ -139,6 +139,12 @@ const OrderScreen = () => {
 
   const orderState = useSelector((state) => state.order);
   const { order, loading, error, successPay } = orderState;
+  const { userInfo } = useSelector((state) => state.auth);
+
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState('');
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
 
   useEffect(() => {
     if (!order || order._id !== orderId || successPay) {
@@ -151,6 +157,30 @@ const OrderScreen = () => {
     dispatch(payOrder({ orderId, paymentResult }));
   };
 
+  const handleCancelOrder = async () => {
+    try {
+      setCancelling(true);
+      setCancelError('');
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo?.token}`,
+        },
+      };
+      await axios.put(`/api/orders/${orderId}/cancel`, { reason: cancelReason }, config);
+      setCancelling(false);
+      setShowCancelModal(false);
+      dispatch(getOrderDetails(orderId));
+    } catch (err) {
+      setCancelError(err.response?.data?.message || err.message);
+      setCancelling(false);
+    }
+  };
+
+  const stages = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered'];
+  const currentStageIndex = order ? stages.indexOf(order.status) : -1;
+  const isCancelled = order?.status === 'Cancelled';
+  const canCancel = order && !['Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'].includes(order.status);
+
   return loading || !order ? (
     <div className="flex justify-center py-20">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -161,27 +191,122 @@ const OrderScreen = () => {
     </div>
   ) : (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <h1 className="text-3xl font-heading font-bold mb-4 text-textPrimary">Order {order._id}</h1>
-      
-      {/* Jumia-style Status Tracker */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
-        <h2 className="text-xl font-bold mb-6">Order Status</h2>
-        <div className="relative pt-2">
-          <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
-            <div style={{ width: 
-              order.status === 'Placed' ? '25%' : 
-              order.status === 'Confirmed' ? '50%' : 
-              order.status === 'Shipped' ? '75%' : 
-              order.status === 'Delivered' ? '100%' : '0%' 
-            }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary transition-all duration-500"></div>
-          </div>
-          <div className="flex justify-between text-sm font-semibold text-gray-500">
-            <div className={['Placed', 'Confirmed', 'Shipped', 'Delivered'].includes(order.status) ? 'text-primary' : ''}>Placed</div>
-            <div className={['Confirmed', 'Shipped', 'Delivered'].includes(order.status) ? 'text-primary' : ''}>Confirmed</div>
-            <div className={['Shipped', 'Delivered'].includes(order.status) ? 'text-primary' : ''}>Shipped</div>
-            <div className={order.status === 'Delivered' ? 'text-primary' : ''}>Delivered</div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+        <div>
+          <h1 className="text-3xl font-heading font-bold text-textPrimary">Order #{order._id}</h1>
+          <p className="text-sm text-gray-500">Placed on {new Date(order.createdAt).toLocaleDateString()} • {order.deliveryType || 'Standard'} Delivery</p>
+        </div>
+        
+        {canCancel && (
+          <button
+            onClick={() => setShowCancelModal(true)}
+            className="px-4 py-2 border border-red-500 text-red-600 hover:bg-red-50 font-semibold rounded-lg text-sm transition-colors self-start md:self-auto"
+          >
+            Cancel Order
+          </button>
+        )}
+      </div>
+
+      {/* Cancel Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4">
+            <h3 className="text-xl font-bold text-gray-900">Cancel Order #{order._id}?</h3>
+            <p className="text-sm text-gray-600">Are you sure you want to cancel this order? Items will be released back into inventory.</p>
+            
+            {cancelError && (
+              <div className="p-3 bg-red-50 text-red-600 text-xs border border-red-200 rounded-lg">{cancelError}</div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Reason for cancellation (optional)</label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="e.g. Changed my mind / Ordered by mistake"
+                className="w-full border rounded-lg p-2.5 text-sm outline-none focus:border-primary"
+                rows="3"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCancelModal(false)}
+                className="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 rounded-lg"
+              >
+                Keep Order
+              </button>
+              <button
+                type="button"
+                disabled={cancelling}
+                onClick={handleCancelOrder}
+                className="px-4 py-2 text-sm font-semibold bg-red-600 text-white hover:bg-red-700 rounded-lg disabled:opacity-50 flex items-center gap-2"
+              >
+                {cancelling && <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>}
+                Confirm Cancellation
+              </button>
+            </div>
           </div>
         </div>
+      )}
+      
+      {/* Jumia-style Visual Order Tracking Timeline */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
+        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+          Package Tracking Timeline
+          {isCancelled && <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">CANCELLED</span>}
+        </h2>
+        
+        {isCancelled ? (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-sm">
+            <strong>This order was cancelled.</strong> {order.cancellationReason && `Reason: ${order.cancellationReason}`}
+          </div>
+        ) : (
+          <div className="relative">
+            {/* Progress Bar Line */}
+            <div className="hidden md:block overflow-hidden h-2 mb-6 text-xs flex rounded bg-gray-200">
+              <div 
+                style={{ width: `${Math.max(0, (currentStageIndex / (stages.length - 1)) * 100)}%` }} 
+                className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary transition-all duration-500"
+              ></div>
+            </div>
+
+            {/* Stepper Nodes */}
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
+              {stages.map((stage, idx) => {
+                const isPassed = idx <= currentStageIndex;
+                const isCurrent = idx === currentStageIndex;
+                let timestamp = null;
+
+                if (stage === 'Pending') timestamp = order.createdAt;
+                if (stage === 'Confirmed') timestamp = order.confirmedAt;
+                if (stage === 'Processing') timestamp = order.processingAt;
+                if (stage === 'Shipped') timestamp = order.shippedAt;
+                if (stage === 'Out for Delivery') timestamp = order.outForDeliveryAt;
+                if (stage === 'Delivered') timestamp = order.deliveredAt;
+
+                return (
+                  <div key={stage} className={`flex flex-col items-center p-3 rounded-lg ${isCurrent ? 'bg-emerald-50 border border-emerald-200' : ''}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs mb-2 transition-all ${
+                      isPassed ? 'bg-primary text-white shadow-md' : 'bg-gray-200 text-gray-500'
+                    }`}>
+                      {isPassed ? '✓' : idx + 1}
+                    </div>
+                    <span className={`text-xs font-bold ${isPassed ? 'text-primary' : 'text-gray-400'}`}>
+                      {stage}
+                    </span>
+                    {timestamp && (
+                      <span className="text-[10px] text-gray-500 mt-1">
+                        {new Date(timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">

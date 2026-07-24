@@ -55,6 +55,24 @@ const OrdersScreen = () => {
     }
   };
 
+  const updateStatusHandler = async (id, status) => {
+    try {
+      const userInfoStr = localStorage.getItem('userInfo');
+      if (!userInfoStr) throw new Error('Not logged in');
+      const userInfo = JSON.parse(userInfoStr);
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+
+      await axios.put(`/api/orders/${id}/status`, { status }, config);
+      fetchOrders();
+    } catch (error) {
+      alert('Error updating order status');
+    }
+  };
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
@@ -83,7 +101,7 @@ const OrdersScreen = () => {
                   <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Customer</th>
                   <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Date</th>
                   <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Total</th>
-                  <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Lifecycle Status</th>
                   <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
@@ -95,18 +113,28 @@ const OrdersScreen = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.createdAt.substring(0, 10)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary">UGX {order.totalPrice.toLocaleString()}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {order.isDelivered ? (
-                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-green-50 text-green-600 border border-green-100 shadow-sm">
-                          Delivered on {order.deliveredAt.substring(0, 10)}
-                        </span>
-                      ) : (
-                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-amber-50 text-amber-600 border border-amber-100 shadow-sm">
-                          Pending Delivery
-                        </span>
-                      )}
+                      <select
+                        value={order.status || 'Pending'}
+                        onChange={(e) => updateStatusHandler(order._id, e.target.value)}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-full border outline-none cursor-pointer ${
+                          order.status === 'Delivered' ? 'bg-green-50 text-green-700 border-green-200' :
+                          order.status === 'Cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
+                          order.status === 'Out for Delivery' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                          order.status === 'Shipped' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                          'bg-amber-50 text-amber-700 border-amber-200'
+                        }`}
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Confirmed">Confirmed</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Shipped">Shipped</option>
+                        <option value="Out for Delivery">Out for Delivery</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {!order.isDelivered ? (
+                      {order.status !== 'Delivered' && (
                         <button 
                           onClick={() => deliverHandler(order._id)}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white font-bold transition-all text-xs"
@@ -114,8 +142,6 @@ const OrdersScreen = () => {
                         >
                           <Truck size={14} /> Force Deliver
                         </button>
-                      ) : (
-                        <span className="text-gray-300 text-xs font-semibold">Completed</span>
                       )}
                     </td>
                   </tr>

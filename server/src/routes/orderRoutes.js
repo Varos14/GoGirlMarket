@@ -13,7 +13,8 @@ const {
   updateOrderStatus,
   processPesapalPayment,
   handlePesapalIPN,
-  verifyPesapalPayment
+  verifyPesapalPayment,
+  cancelOrder
 } = require('../controllers/orderController');
 const { protect, admin, vendor } = require('../middleware/authMiddleware');
 
@@ -35,7 +36,8 @@ router.route('/:id/flutterwave').post(protect, processFlutterwavePayment);
 router.route('/:id/pesapal').post(protect, processPesapalPayment);
 router.route('/verify-pesapal/:orderTrackingId').get(protect, verifyPesapalPayment);
 router.put('/:id/deliver', protect, updateOrderToDelivered);
-router.put('/:id/status', protect, admin, updateOrderStatus);
+router.put('/:id/cancel', protect, cancelOrder);
+router.put('/:id/status', protect, updateOrderStatus);
 
 module.exports = router;
 

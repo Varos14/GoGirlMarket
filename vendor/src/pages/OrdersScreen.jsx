@@ -43,6 +43,24 @@ const OrdersScreen = () => {
     }
   };
 
+  const updateStatus = async (orderId, newStatus) => {
+    try {
+      const vendorInfoStr = localStorage.getItem('vendorInfo');
+      if (!vendorInfoStr) return;
+      const vendorInfo = JSON.parse(vendorInfoStr);
+
+      const config = {
+        headers: { Authorization: `Bearer ${vendorInfo.token}` },
+      };
+
+      await axios.put(`/api/orders/${orderId}/status`, { status: newStatus }, config);
+      fetchOrders();
+    } catch (error) {
+      console.error('Failed to update status', error);
+      alert('Error updating status. Check console.');
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -124,9 +142,27 @@ const OrdersScreen = () => {
                       <td className="py-5 px-6">
                         {order.vendorDetails.isDelivered ? (
                           <span className="bg-green-50 border border-green-100 text-green-700 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm">Delivered</span>
-                        ) : order.isPaid ? (
+                        ) : (
                           <div className="flex flex-col gap-2">
-                            <span className="bg-blue-50 border border-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm w-max">To Ship</span>
+                            <span className="bg-blue-50 border border-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm w-max">
+                              {order.status || 'Pending'}
+                            </span>
+                            {order.status !== 'Processing' && order.status !== 'Shipped' && (
+                              <button 
+                                onClick={() => updateStatus(order._id, 'Processing')}
+                                className="bg-amber-600 text-white text-[10px] px-3 py-1 font-bold rounded hover:bg-amber-700 transition-colors"
+                              >
+                                Mark Processing (Packing)
+                              </button>
+                            )}
+                            {order.status !== 'Shipped' && (
+                              <button 
+                                onClick={() => updateStatus(order._id, 'Shipped')}
+                                className="bg-blue-600 text-white text-[10px] px-3 py-1 font-bold rounded hover:bg-blue-700 transition-colors"
+                              >
+                                Mark Shipped
+                              </button>
+                            )}
                             <button 
                               onClick={() => markAsDelivered(order._id)}
                               className="bg-gray-900 text-white text-[10px] px-3 py-1.5 font-bold rounded shadow-sm hover:bg-gray-700 transition-colors"
@@ -134,8 +170,6 @@ const OrdersScreen = () => {
                               Mark Delivered
                             </button>
                           </div>
-                        ) : (
-                          <span className="bg-red-50 border border-red-100 text-red-600 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm">Unpaid</span>
                         )}
                       </td>
                     </tr>

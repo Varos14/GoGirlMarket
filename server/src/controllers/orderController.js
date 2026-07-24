@@ -13,129 +13,130 @@ const notifications = require('../utils/notifications');
 // @access  Private
 const addOrderItems = async (req, res) => {
   try {
-    const {
-      orderItems,
-      shippingAddress,
-      paymentMethod,
-      itemsPrice,
-      taxPrice,
-      shippingPrice,
-      totalPrice,
-      appliedCoupons = [], // Default to empty array if not passed
-    } = req.body;
-
-    if (orderItems && orderItems.length === 0) {
-      res.status(400).json({ message: 'No order items' });
-      return;
-    } else {
-      // 1. Fetch products to get vendor IDs
-      const productIds = orderItems.map((item) => item.product);
-      const productsFromDb = await Product.find({ _id: { $in: productIds } });
-
-      // 2. Group items by vendor
-      const vendorGroups = {};
-      
-      for (const item of orderItems) {
-        const productFromDb = productsFromDb.find((p) => p._id.toString() === item.product.toString());
-        if (!productFromDb) {
-          return res.status(404).json({ message: `Product not found: ${item.product}` });
-        }
-        
-        const vendorId = productFromDb.vendor.toString();
-        if (!vendorGroups[vendorId]) {
-          vendorGroups[vendorId] = {
-            vendor: vendorId,
-            items: [],
-            shippingPrice: 0, // Shipping is paid off-platform on delivery
-            discountAmount: 0,
-            couponCode: null,
-            isDelivered: false
-          };
-        }
-        
-        vendorGroups[vendorId].items.push({
-          name: item.name,
-          qty: item.qty,
-          image: item.image,
-          price: item.price,
-          product: item.product
-        });
-      }
-
-      // 3. Apply Coupons to vendor groups (with server-side enforcement)
-      const couponUsageRecords = []; // Track for post-save usage recording
-
-      for (const coupon of appliedCoupons) {
-        if (vendorGroups[coupon.vendor]) {
-          const group = vendorGroups[coupon.vendor];
-          
-          // Look up the actual coupon from the database for server-side validation
-          let couponDoc = null;
-          if (coupon.couponId) {
-            couponDoc = await Coupon.findById(coupon.couponId);
-          }
-
-          // Determine which items are eligible for this coupon
-          let eligibleItems = group.items;
-          if (couponDoc && couponDoc.applicableProducts && couponDoc.applicableProducts.length > 0) {
-            const applicableIds = couponDoc.applicableProducts.map(p => p.toString());
-            eligibleItems = group.items.filter(item => applicableIds.includes(item.product.toString()));
-          }
-
-          if (eligibleItems.length === 0) continue; // No eligible items, skip this coupon
-
-          const eligibleTotal = eligibleItems.reduce((acc, item) => acc + item.price * item.qty, 0);
-
-          // Enforce minimum order amount
-          if (couponDoc && couponDoc.minOrderAmount > 0 && eligibleTotal < couponDoc.minOrderAmount) {
-            continue; // Skip — doesn't meet minimum
-          }
-
-          let discountAmt = 0;
-          if (coupon.discountType === 'percentage') {
-            discountAmt = eligibleTotal * (coupon.discountValue / 100);
-            // Enforce max discount cap for percentage coupons
-            if (couponDoc && couponDoc.maxDiscountAmount > 0) {
-              discountAmt = Math.min(discountAmt, couponDoc.maxDiscountAmount);
-            }
-          } else {
-            discountAmt = coupon.discountValue;
-          }
-          
-          // Make sure discount doesn't exceed eligible item total
-          discountAmt = Math.min(discountAmt, eligibleTotal);
-          
-          group.discountAmount = Math.round(discountAmt);
-          group.couponCode = coupon.code;
-
-          // Queue for usage recording after order is saved
-          if (coupon.couponId) {
-            couponUsageRecords.push({
-              couponId: coupon.couponId,
-              userId: req.user._id,
-              discountAmount: Math.round(discountAmt)
-            });
-          }
-        }
-      }
-
-      const vendorOrders = Object.values(vendorGroups);
-
-      // Verify the total shipping price passed from frontend matches the backend calculation
-      // If frontend didn't calculate correctly, we should ideally fail, but let's just accept frontend's numbers for total
-      // and override the vendor's shipping.
-      
-      const order = new Order({
-        user: req.user._id,
-        orderItems, // Still keeping global orderItems for easier legacy compatibility
-        vendorOrders, // The new split orders
+      const {
+        orderItems,
         shippingAddress,
+        deliveryType = 'Standard',
         paymentMethod,
         itemsPrice,
         taxPrice,
         shippingPrice,
         totalPrice,
-      });
+        appliedCoupons = [], // Default to empty array if not passed
+      } = req.body;
+
+      if (orderItems && orderItems.length === 0) {
+        res.status(400).json({ message: 'No order items' });
+        return;
+      } else {
+        // 1. Fetch products to get vendor IDs
+        const productIds = orderItems.map((item) => item.product);
+        const productsFromDb = await Product.find({ _id: { $in: productIds } });
+
+        // 2. Group items by vendor
+        const vendorGroups = {};
+        
+        for (const item of orderItems) {
+          const productFromDb = productsFromDb.find((p) => p._id.toString() === item.product.toString());
+          if (!productFromDb) {
+            return res.status(404).json({ message: `Product not found: ${item.product}` });
+          }
+          
+          const vendorId = productFromDb.vendor.toString();
+          if (!vendorGroups[vendorId]) {
+            vendorGroups[vendorId] = {
+              vendor: vendorId,
+              items: [],
+              shippingPrice: 0, // Shipping is paid off-platform on delivery
+              discountAmount: 0,
+              couponCode: null,
+              isDelivered: false
+            };
+          }
+          
+          vendorGroups[vendorId].items.push({
+            name: item.name,
+            qty: item.qty,
+            image: item.image,
+            price: item.price,
+            product: item.product
+          });
+        }
+
+        // 3. Apply Coupons to vendor groups (with server-side enforcement)
+        const couponUsageRecords = []; // Track for post-save usage recording
+
+        for (const coupon of appliedCoupons) {
+          if (vendorGroups[coupon.vendor]) {
+            const group = vendorGroups[coupon.vendor];
+            
+            // Look up the actual coupon from the database for server-side validation
+            let couponDoc = null;
+            if (coupon.couponId) {
+              couponDoc = await Coupon.findById(coupon.couponId);
+            }
+
+            // Determine which items are eligible for this coupon
+            let eligibleItems = group.items;
+            if (couponDoc && couponDoc.applicableProducts && couponDoc.applicableProducts.length > 0) {
+              const applicableIds = couponDoc.applicableProducts.map(p => p.toString());
+              eligibleItems = group.items.filter(item => applicableIds.includes(item.product.toString()));
+            }
+
+            if (eligibleItems.length === 0) continue; // No eligible items, skip this coupon
+
+            const eligibleTotal = eligibleItems.reduce((acc, item) => acc + item.price * item.qty, 0);
+
+            // Enforce minimum order amount
+            if (couponDoc && couponDoc.minOrderAmount > 0 && eligibleTotal < couponDoc.minOrderAmount) {
+              continue; // Skip — doesn't meet minimum
+            }
+
+            let discountAmt = 0;
+            if (coupon.discountType === 'percentage') {
+              discountAmt = eligibleTotal * (coupon.discountValue / 100);
+              // Enforce max discount cap for percentage coupons
+              if (couponDoc && couponDoc.maxDiscountAmount > 0) {
+                discountAmt = Math.min(discountAmt, couponDoc.maxDiscountAmount);
+              }
+            } else {
+              discountAmt = coupon.discountValue;
+            }
+            
+            // Make sure discount doesn't exceed eligible item total
+            discountAmt = Math.min(discountAmt, eligibleTotal);
+            
+            group.discountAmount = Math.round(discountAmt);
+            group.couponCode = coupon.code;
+
+            // Queue for usage recording after order is saved
+            if (coupon.couponId) {
+              couponUsageRecords.push({
+                couponId: coupon.couponId,
+                userId: req.user._id,
+                discountAmount: Math.round(discountAmt)
+              });
+            }
+          }
+        }
+
+        const vendorOrders = Object.values(vendorGroups);
+        const initialStatus = paymentMethod === 'Cash on Delivery' ? 'Confirmed' : 'Pending';
+
+        const order = new Order({
+          user: req.user._id,
+          orderItems,
+          vendorOrders,
+          shippingAddress,
+          deliveryType,
+          paymentMethod,
+          itemsPrice,
+          taxPrice,
+          shippingPrice,
+          totalPrice,
+          status: initialStatus,
+          confirmedAt: initialStatus === 'Confirmed' ? Date.now() : undefined,
+        });
 
       const createdOrder = await order.save();
 
@@ -481,21 +482,40 @@ const getDashboardStats = async (req, res) => {
 
 // @desc    Update overall order status (Jumia-style)
 // @route   PUT /api/orders/:id/status
-// @access  Private/Admin
+// @access  Private/Admin or Vendor
 const updateOrderStatus = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id).populate('user', 'name email phone');
 
     if (order) {
       const newStatus = req.body.status;
+      
+      if (order.status === 'Cancelled') {
+        return res.status(400).json({ message: 'Cancelled orders cannot change status.' });
+      }
+
       order.status = newStatus;
 
-      if (newStatus === 'Confirmed') {
+      if (newStatus === 'Confirmed' && !order.confirmedAt) {
         order.confirmedAt = Date.now();
-      } else if (newStatus === 'Shipped') {
+      } else if (newStatus === 'Processing' && !order.processingAt) {
+        order.processingAt = Date.now();
+      } else if (newStatus === 'Shipped' && !order.shippedAt) {
         order.shippedAt = Date.now();
-      } else if (newStatus === 'Delivered') {
+      } else if (newStatus === 'Out for Delivery' && !order.outForDeliveryAt) {
+        order.outForDeliveryAt = Date.now();
+      } else if (newStatus === 'Delivered' && !order.deliveredAt) {
         order.deliveredAt = Date.now();
+      } else if (newStatus === 'Cancelled' && !order.cancelledAt) {
+        order.cancelledAt = Date.now();
+        order.cancellationReason = req.body.reason || 'Cancelled by Admin';
+        
+        // Restore stock quantities
+        for (const item of order.orderItems) {
+          await Product.findByIdAndUpdate(item.product, {
+            $inc: { countInStock: item.qty }
+          });
+        }
       }
 
       const updatedOrder = await order.save();
@@ -507,6 +527,52 @@ const updateOrderStatus = async (req, res) => {
     } else {
       res.status(404).json({ message: 'Order not found' });
     }
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+// @desc    Cancel order (Customer pre-shipment cancellation)
+// @route   PUT /api/orders/:id/cancel
+// @access  Private
+const cancelOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).populate('user', 'name email phone');
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Security check: ensure order belongs to current user or user is admin
+    if (order.user._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to cancel this order' });
+    }
+
+    // Cancellation policy check: allowed only BEFORE Shipped status
+    const restrictedStatuses = ['Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'];
+    if (restrictedStatuses.includes(order.status)) {
+      return res.status(400).json({ 
+        message: `Cannot cancel order at '${order.status}' stage. Orders can only be cancelled before dispatch.` 
+      });
+    }
+
+    order.status = 'Cancelled';
+    order.cancelledAt = Date.now();
+    order.cancellationReason = req.body.reason || 'Cancelled by Customer';
+
+    // Restore item inventory counts
+    for (const item of order.orderItems) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { countInStock: item.qty }
+      });
+    }
+
+    const updatedOrder = await order.save();
+
+    // Send notifications
+    notifications.sendOrderStatusUpdate(order.user, updatedOrder, 'Cancelled');
+
+    res.json({ message: 'Order cancelled successfully', order: updatedOrder });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -700,5 +766,6 @@ module.exports = {
   processPesapalPayment,
   handlePesapalIPN,
   verifyPesapalPayment,
+  cancelOrder,
 };
 

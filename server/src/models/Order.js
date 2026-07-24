@@ -23,9 +23,17 @@ const orderSchema = new mongoose.Schema(
     shippingAddress: {
       address: { type: String, required: true },
       city: { type: String, required: true },
+      region: { type: String },
+      ward: { type: String },
+      landmark: { type: String },
       postalCode: { type: String },
       country: { type: String, required: true },
       phone: { type: String, required: true },
+    },
+    deliveryType: {
+      type: String,
+      enum: ['Standard', 'Express'],
+      default: 'Standard',
     },
     paymentMethod: {
       type: String,
@@ -59,8 +67,8 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Placed', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'],
-      default: 'Placed',
+      enum: ['Pending', 'Placed', 'Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'],
+      default: 'Pending',
     },
     isPaid: {
       type: Boolean,
@@ -73,11 +81,23 @@ const orderSchema = new mongoose.Schema(
     confirmedAt: {
       type: Date,
     },
+    processingAt: {
+      type: Date,
+    },
     shippedAt: {
+      type: Date,
+    },
+    outForDeliveryAt: {
       type: Date,
     },
     deliveredAt: {
       type: Date,
+    },
+    cancelledAt: {
+      type: Date,
+    },
+    cancellationReason: {
+      type: String,
     },
     vendorOrders: [
       {
