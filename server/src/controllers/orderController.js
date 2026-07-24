@@ -534,15 +534,27 @@ const processPesapalPayment = async (req, res) => {
     // IPN notification ID registered with Pesapal
     let ipnId = process.env.PESAPAL_IPN_ID;
     
-    // If IPN ID is not set in env, auto-register IPN URL on the fly (for developer convenience)
+    // If IPN ID is not set or invalid, auto-register IPN URL
     if (!ipnId) {
       try {
         const backendDomain = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
         const ipnUrl = `${backendDomain}/api/orders/pesapal-ipn`;
         const ipnRes = await pesapalUtils.registerPesapalIPN(ipnUrl);
-        ipnId = ipnRes.ipn_id;
+        if (ipnRes && ipnRes.ipn_id) {
+          ipnId = ipnRes.ipn_id;
+        }
       } catch (ipnErr) {
         console.warn('Could not auto-register Pesapal IPN URL:', ipnErr.message);
+      }
+    }
+
+    if (!ipnId) {
+      // Fallback IPN registration attempt if env IPN ID is empty
+      try {
+        const ipnRes = await pesapalUtils.registerPesapalIPN('https://gogirlmarket.com/api/orders/pesapal-ipn');
+        ipnId = ipnRes?.ipn_id;
+      } catch (e) {
+        console.error('Fallback IPN registration error:', e.message);
       }
     }
 
