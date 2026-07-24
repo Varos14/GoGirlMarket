@@ -590,8 +590,12 @@ const processPesapalPayment = async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Pesapal process error:', error.response?.data || error.message);
-    res.status(500).json({ message: 'Pesapal Payment Processing Error', error: error.message });
+    const errorDetails = error.response?.data || error.message;
+    console.error('Pesapal process error:', errorDetails);
+    res.status(500).json({ 
+      message: error.response?.data?.message || error.response?.data?.error?.message || error.message || 'Pesapal Payment Processing Error', 
+      details: errorDetails 
+    });
   }
 };
 
