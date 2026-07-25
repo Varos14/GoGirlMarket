@@ -376,7 +376,11 @@ const OrderScreen = () => {
                 {order.vendorOrders.map((vendorOrder, vIndex) => {
                   const vendorInfo = vendorOrder.vendor;
                   const storeTitle = vendorInfo?.storeName || vendorInfo?.name || `Vendor Store ${vIndex + 1}`;
-                  const vendorPhone = vendorInfo?.phone ? vendorInfo.phone.replace(/[^0.9]/g, '') : '';
+                  let rawPhone = vendorInfo?.phone || '';
+                  let vendorPhone = rawPhone.replace(/[^\d]/g, '');
+                  if (vendorPhone.startsWith('0')) {
+                    vendorPhone = '256' + vendorPhone.substring(1);
+                  }
                   
                   // Construct WhatsApp pre-filled message
                   const itemsList = vendorOrder.items?.map(i => `${i.qty}x ${i.name}`).join(', ');
