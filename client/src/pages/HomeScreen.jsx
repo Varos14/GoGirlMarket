@@ -20,13 +20,14 @@ const HomeScreen = () => {
   useEffect(() => {
     dispatch(fetchProducts());
     
-    // Fetch featured products
+    // Fetch featured products safely
     const fetchFeatured = async () => {
       try {
         const { data } = await axios.get('/api/products?featured=true');
-        setFeaturedProducts(data.products || []);
+        setFeaturedProducts(Array.isArray(data?.products) ? data.products : []);
       } catch (err) {
-        console.error('Error fetching featured products', err);
+        console.warn('Featured products unavailable:', err?.message || err);
+        setFeaturedProducts([]);
       } finally {
         setLoadingFeatured(false);
       }
@@ -72,81 +73,235 @@ const HomeScreen = () => {
   };
 
   return (
-    <div>
-      <section className="relative bg-white overflow-hidden border-b">
-        <div className="max-w-7xl mx-auto">
-          <div className="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32 pt-20">
-            <main className="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
-              <div className="sm:text-center lg:text-left">
-                <h1 className="text-4xl tracking-tight font-extrabold text-textPrimary sm:text-5xl md:text-6xl font-heading">
-                  <span className="block xl:inline">Everything She Loves,</span>{' '}
-                  <span className="block text-primary xl:inline">Delivered.</span>
-                </h1>
-                <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                  Uganda's premier marketplace for women's fashion, beauty, and lifestyle products. Shop beautiful, live confident.
-                </p>
-                <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
-                  <div className="rounded-md shadow">
-                    <Link to="/shop" className="w-full flex items-center justify-center btn-primary text-lg px-8 py-3">
-                      Start Shopping
-                    </Link>
-                  </div>
-                </div>
+    <div className="space-y-12 pb-12">
+      {/* Shoppe Hero Carousel Banner Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="relative rounded-3xl bg-gradient-to-r from-[#F7EFE9] via-[#FDF8F5] to-[#F3ECE5] overflow-hidden shadow-sm border border-borderLight min-h-[420px] md:min-h-[480px] flex items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center p-8 md:p-14 z-10 w-full">
+            <div className="space-y-6">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-bold text-primary leading-tight">
+                Embrace Your <br />
+                <span className="italic font-normal text-accent">Signature</span> Style.
+              </h1>
+              <p className="text-textMuted text-base sm:text-lg max-w-md">
+                Discover curated fashion, beauty essentials, and trending artisanal products designed to empower every moment.
+              </p>
+              <div className="flex items-center gap-4 pt-2">
+                <Link to="/shop" className="btn-primary py-3.5 px-8 text-sm shadow-md hover:shadow-lg flex items-center gap-2">
+                  Shop Collection
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </Link>
+                <Link to="/shop?category=deals" className="btn-secondary py-3.5 px-6 text-sm">
+                  Explore Deals
+                </Link>
               </div>
-            </main>
-          </div>
-        </div>
-        <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2 bg-surface">
-          <div className="h-56 w-full sm:h-72 md:h-96 lg:w-full lg:h-full flex items-center justify-center bg-gray-100 overflow-hidden relative group">
-            <div className="absolute inset-0 bg-primary opacity-10 group-hover:opacity-0 transition-opacity duration-500 z-10"></div>
-            <img 
-              src="https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?q=80&w=2070&auto=format&fit=crop" 
-              alt="Women's boutique interior" 
-              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
-            />
+            </div>
+
+            <div className="relative w-full py-2 sm:py-6">
+              <div className="absolute inset-0 bg-gradient-to-tr from-softRose/70 via-cream/40 to-transparent rounded-full filter blur-3xl transform scale-95 pointer-events-none"></div>
+              
+              {/* Asymmetrical Floating Lookbook Grid */}
+              <div className="relative z-10 grid grid-cols-2 gap-3.5 sm:gap-5 max-w-md lg:max-w-lg mx-auto">
+                
+                {/* Section 1: Clothing - Tall Card */}
+                <Link 
+                  to="/shop?category=Clothing" 
+                  className="group relative h-48 sm:h-56 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border-4 border-surface transform -rotate-1 hover:rotate-0 hover:-translate-y-1 transition-all duration-500"
+                >
+                  <img 
+                    src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop" 
+                    alt="Clothing Category" 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-90 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                    <span className="px-3 py-1.5 rounded-full bg-surface/85 backdrop-blur-md text-primary text-[11px] font-bold tracking-wide shadow-sm flex items-center gap-1 border border-surface/50">
+                      👗 Clothing
+                    </span>
+                    <span className="w-7 h-7 rounded-full bg-accent text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 shadow-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                    </span>
+                  </div>
+                </Link>
+
+                {/* Section 2: Shoes - Offset Card */}
+                <Link 
+                  to="/shop?category=Shoes" 
+                  className="group relative h-40 sm:h-48 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border-4 border-surface transform rotate-2 hover:rotate-0 hover:-translate-y-1 transition-all duration-500 mt-4"
+                >
+                  <img 
+                    src="https://images.unsplash.com/photo-1543163521-1bf539c55dd2?q=80&w=600&auto=format&fit=crop" 
+                    alt="Shoes Category" 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-90 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                    <span className="px-3 py-1.5 rounded-full bg-surface/85 backdrop-blur-md text-primary text-[11px] font-bold tracking-wide shadow-sm flex items-center gap-1 border border-surface/50">
+                      👠 Shoes
+                    </span>
+                    <span className="w-7 h-7 rounded-full bg-accent text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 shadow-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                    </span>
+                  </div>
+                </Link>
+
+                {/* Section 3: Handbags */}
+                <Link 
+                  to="/shop?category=Bags" 
+                  className="group relative h-40 sm:h-48 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border-4 border-surface transform rotate-1 hover:rotate-0 hover:-translate-y-1 transition-all duration-500 -mt-2"
+                >
+                  <img 
+                    src="https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=600&auto=format&fit=crop" 
+                    alt="Bags Category" 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-90 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                    <span className="px-3 py-1.5 rounded-full bg-surface/85 backdrop-blur-md text-primary text-[11px] font-bold tracking-wide shadow-sm flex items-center gap-1 border border-surface/50">
+                      👜 Bags
+                    </span>
+                    <span className="w-7 h-7 rounded-full bg-accent text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 shadow-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                    </span>
+                  </div>
+                </Link>
+
+                {/* Section 4: Accessories - Tall Offset Card */}
+                <Link 
+                  to="/shop?category=Accessories" 
+                  className="group relative h-48 sm:h-56 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border-4 border-surface transform -rotate-2 hover:rotate-0 hover:-translate-y-1 transition-all duration-500 -mt-6"
+                >
+                  <img 
+                    src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=600&auto=format&fit=crop" 
+                    alt="Accessories Category" 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-90 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                    <span className="px-3 py-1.5 rounded-full bg-surface/85 backdrop-blur-md text-primary text-[11px] font-bold tracking-wide shadow-sm flex items-center gap-1 border border-surface/50">
+                      🕶️ Accessories
+                    </span>
+                    <span className="w-7 h-7 rounded-full bg-accent text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 shadow-sm">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                    </span>
+                  </div>
+                </Link>
+
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Products Section */}
-      {!loadingFeatured && featuredProducts.length > 0 && (
-        <div className="bg-amber-50/50 py-16 border-b border-amber-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="h-10 w-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-600">
-                <Star size={20} fill="currentColor" />
+      {/* Flash Deals & Live Countdown Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-gradient-to-r from-primary via-[#2C2D35] to-primary rounded-3xl p-6 sm:p-8 text-surface shadow-md border border-borderDark flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+          <div className="space-y-2 z-10">
+            <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-accent text-white uppercase tracking-wider inline-flex items-center gap-1.5 shadow-xs">
+              🔥 Limited Time Offer
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-heading font-bold text-surface">
+              GoGirl Flash Sale & Mega Deals
+            </h2>
+            <p className="text-xs text-surface/70">Save up to 40% on top footwear, skincare & accessories. Offers refresh daily!</p>
+          </div>
+
+          <div className="flex items-center gap-3 z-10">
+            <div className="flex items-center gap-2 bg-surface/10 backdrop-blur-md p-3 rounded-2xl border border-surface/15 text-center">
+              <div className="w-10 text-center">
+                <span className="block text-xl font-heading font-bold text-accent">08</span>
+                <span className="text-[9px] uppercase tracking-wider text-surface/60 font-semibold">Hours</span>
               </div>
-              <h2 className="text-3xl font-heading font-bold text-gray-900">Featured Premium</h2>
+              <span className="text-accent font-bold text-lg">:</span>
+              <div className="w-10 text-center">
+                <span className="block text-xl font-heading font-bold text-accent">45</span>
+                <span className="text-[9px] uppercase tracking-wider text-surface/60 font-semibold">Mins</span>
+              </div>
+              <span className="text-accent font-bold text-lg">:</span>
+              <div className="w-10 text-center">
+                <span className="block text-xl font-heading font-bold text-accent">22</span>
+                <span className="text-[9px] uppercase tracking-wider text-surface/60 font-semibold">Secs</span>
+              </div>
+            </div>
+            <Link to="/shop?category=deals" className="btn-primary bg-accent hover:bg-accent/90 text-white py-3.5 px-6 text-xs font-bold shadow-md shrink-0">
+              Claim Deals
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Category Quick Pills / Avatars */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-heading font-bold text-primary">Shop by Category</h2>
+          <Link to="/shop" className="text-xs font-bold text-accent hover:underline">View All</Link>
+        </div>
+
+        <div className="flex items-center gap-4 overflow-x-auto no-scrollbar py-2">
+          {[
+            { name: "All", icon: "✨", cat: "" },
+            { name: "Clothing", icon: "👗", cat: "Clothing" },
+            { name: "Beauty", icon: "💄", cat: "Beauty" },
+            { name: "Bags", icon: "👜", cat: "Bags" },
+            { name: "Shoes", icon: "👠", cat: "Shoes" },
+            { name: "Jewelry", icon: "💎", cat: "Jewelry" },
+            { name: "Accessories", icon: "🕶️", cat: "Accessories" }
+          ].map((item, idx) => (
+            <Link 
+              key={idx} 
+              to={item.cat ? `/shop?category=${item.cat}` : "/shop"} 
+              className="flex-shrink-0 flex items-center gap-2 px-5 py-3 rounded-full bg-surface border border-borderLight shadow-xs hover:border-accent hover:bg-cream transition-all group"
+            >
+              <span className="text-lg group-hover:scale-110 transition-transform">{item.icon}</span>
+              <span className="text-xs font-semibold text-textPrimary group-hover:text-accent whitespace-nowrap">{item.name}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Featured Premium / Trending Section */}
+      {!loadingFeatured && featuredProducts.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-cream/60 rounded-3xl p-6 sm:p-10 border border-borderLight">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+              <div>
+                <span className="pill-badge bg-softRose text-accent mb-2">⭐ Editor's Pick</span>
+                <h2 className="text-2xl sm:text-3xl font-heading font-bold text-primary">Featured Essentials</h2>
+              </div>
+              <Link to="/shop" className="btn-secondary text-xs py-2.5 px-5">Explore Collection</Link>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {featuredProducts.slice(0, 4).map((product) => (
-                <div key={product._id} className="bg-white rounded-xl border border-amber-100 shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 relative">
-                  <div className="absolute top-3 left-3 z-20">
-                    <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider shadow-sm flex items-center gap-1">
-                      <Star size={10} fill="currentColor" /> Featured
+                <div key={product._id} className="shoppe-card group">
+                  <div className="relative h-72 bg-surface overflow-hidden">
+                    <button 
+                      onClick={(e) => addToWishlist(e, product._id)}
+                      className="absolute top-3 right-3 h-8 w-8 bg-surface/80 backdrop-blur rounded-full flex items-center justify-center text-textMuted hover:text-accent transition-colors shadow-xs z-20"
+                    >
+                      <Heart size={16} />
+                    </button>
+                    <span className="absolute top-3 left-3 bg-primary text-white text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider z-20 shadow-xs">
+                      Featured
                     </span>
+                    <Link to={`/product/${product._id}`}>
+                      <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    </Link>
                   </div>
-                  <Link to={`/product/${product._id}`}>
-                    <div className="h-64 bg-surface flex items-center justify-center relative group">
-                      <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
-                      <div className="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <span className="bg-white text-textPrimary px-4 py-2 font-bold rounded-md shadow-md">View Details</span>
-                       </div>
-                    </div>
-                  </Link>
-                  <div className="p-5 flex flex-col justify-between h-40">
+                  <div className="p-4 flex flex-col justify-between space-y-3">
                     <div>
-                      <h3 className="font-heading font-bold text-lg text-gray-900 line-clamp-1">{product.name}</h3>
-                      <p className="text-sm text-gray-500 mb-2 font-medium">{product.vendor?.storeName || 'Premium Boutique'}</p>
+                      <p className="text-[11px] font-semibold text-textMuted uppercase tracking-wider">{product.vendor?.storeName || 'Boutique'}</p>
+                      <h3 className="font-heading font-semibold text-base text-primary line-clamp-1 group-hover:text-accent transition-colors">{product.name}</h3>
                     </div>
-                    <div className="flex justify-between items-center mt-auto">
-                      <span className="font-bold text-primary text-lg">UGX {product.price.toLocaleString()}</span>
+                    <div className="flex justify-between items-center pt-1 border-t border-borderLight">
+                      <span className="font-bold text-primary text-sm">UGX {product.price.toLocaleString()}</span>
                       <button 
                         onClick={() => addToCartHandler(product)}
-                        className="text-sm bg-gray-900 hover:bg-primary text-white font-bold py-1.5 px-4 rounded-md transition-colors"
+                        className="btn-primary py-1.5 px-4 text-xs"
                       >
-                        Add
+                        + Add
                       </button>
                     </div>
                   </div>
@@ -154,56 +309,78 @@ const HomeScreen = () => {
               ))}
             </div>
           </div>
-        </div>
+        </section>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <h2 className="text-3xl font-heading font-bold text-textPrimary mb-8">Latest Fashion & Beauty</h2>
+      {/* Main Product Showcase Grid */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <span className="pill-badge bg-softRose text-accent mb-1 font-semibold text-[10px] uppercase tracking-wider">🔥 Popular Styles</span>
+            <h2 className="text-2xl sm:text-3xl font-heading font-bold text-primary">Trending Now</h2>
+            <p className="text-xs text-textMuted mt-0.5">Handpicked fashion & footwear favorites from top sellers</p>
+          </div>
+          <Link to="/shop" className="text-xs font-bold text-accent hover:underline flex items-center gap-1">
+            Browse All <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          </Link>
+        </div>
         
         {loading ? (
           <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-accent"></div>
           </div>
         ) : error ? (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-            <span className="block sm:inline">{error}</span>
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+            <span>{error}</span>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.slice(0, 8).map((product) => (
-              <div key={product._id} className={`bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 relative ${product.isSponsored ? 'ring-1 ring-indigo-500/30' : ''}`}>
-                <button 
-                  onClick={(e) => addToWishlist(e, product._id)}
-                  className="absolute top-4 right-4 h-9 w-9 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-gray-400 hover:text-primary transition-colors shadow-sm z-10"
-                  title="Add to Wishlist"
-                >
-                  <Heart size={18} />
-                </button>
-                {product.isSponsored && (
-                  <div className="absolute top-4 left-4 bg-indigo-600/90 backdrop-blur text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded shadow-sm z-10 flex items-center gap-1">
-                    <TrendingUp size={12} /> Sponsored
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {products.slice(0, 8).map((product, index) => (
+              <div key={product._id} className="shoppe-card group flex flex-col justify-between">
+                <div className="relative h-56 sm:h-72 bg-surface overflow-hidden">
+                  <button 
+                    onClick={(e) => addToWishlist(e, product._id)}
+                    className="absolute top-3 right-3 h-8 w-8 bg-surface/80 backdrop-blur rounded-full flex items-center justify-center text-textMuted hover:text-accent transition-colors shadow-xs z-20"
+                    title="Add to Wishlist"
+                  >
+                    <Heart size={16} />
+                  </button>
+                  
+                  {/* Dynamic Discount / Sponsored Badges */}
+                  <div className="absolute top-3 left-3 flex flex-col gap-1 z-20">
+                    {index % 3 === 0 && (
+                      <span className="bg-accent text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
+                        -20% OFF
+                      </span>
+                    )}
+                    {product.isSponsored && (
+                      <span className="bg-primary text-white text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider shadow-xs flex items-center gap-1">
+                        <TrendingUp size={10} /> Sponsored
+                      </span>
+                    )}
                   </div>
-                )}
-                <Link to={`/product/${product._id}`} onClick={() => handleProductClick(product)}>
-                  <div className="h-64 bg-surface flex items-center justify-center relative group">
-                    <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
-                    <div className="absolute inset-0 bg-black bg-opacity-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="bg-white text-textPrimary px-4 py-2 font-bold rounded-md shadow-md">View Details</span>
-                     </div>
-                  </div>
-                </Link>
-                <div className="p-4 flex flex-col justify-between h-40">
+
+                  <Link to={`/product/${product._id}`} onClick={() => handleProductClick(product)}>
+                    <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  </Link>
+                </div>
+                <div className="p-3 sm:p-4 flex flex-col justify-between space-y-2 sm:space-y-3">
                   <div>
-                    <h3 className="font-heading font-semibold text-lg text-textPrimary line-clamp-1">{product.name}</h3>
-                    <p className="text-sm text-gray-500 mb-2">{product.vendor?.storeName || 'Boutique'}</p>
+                    <p className="text-[10px] sm:text-[11px] font-semibold text-textMuted uppercase tracking-wider">{product.vendor?.storeName || 'Fashion Hub'}</p>
+                    <h3 className="font-heading font-semibold text-sm sm:text-base text-primary line-clamp-1 group-hover:text-accent transition-colors">{product.name}</h3>
                   </div>
-                  <div className="flex justify-between items-center mt-auto">
-                    <span className="font-bold text-primary">UGX {product.price.toLocaleString()}</span>
+                  <div className="flex justify-between items-center pt-1 border-t border-borderLight">
+                    <div>
+                      <span className="font-bold text-primary text-xs sm:text-sm">UGX {product.price.toLocaleString()}</span>
+                      {index % 3 === 0 && (
+                        <span className="text-[10px] text-textMuted line-through block font-normal">UGX {Math.round(product.price * 1.25).toLocaleString()}</span>
+                      )}
+                    </div>
                     <button 
                       onClick={() => addToCartHandler(product)}
-                      className="text-sm btn-secondary py-1 px-3"
+                      className="btn-secondary py-1 px-3 text-[11px] sm:text-xs font-semibold"
                     >
-                      Add
+                      + Add
                     </button>
                   </div>
                 </div>
@@ -211,7 +388,7 @@ const HomeScreen = () => {
             ))}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 };

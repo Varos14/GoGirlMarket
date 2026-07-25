@@ -14,7 +14,9 @@ const {
   processPesapalPayment,
   handlePesapalIPN,
   verifyPesapalPayment,
-  cancelOrder
+  cancelOrder,
+  raiseOrderDispute,
+  resolveOrderDispute,
 } = require('../controllers/orderController');
 const { protect, admin, vendor } = require('../middleware/authMiddleware');
 
@@ -38,6 +40,8 @@ router.route('/verify-pesapal/:orderTrackingId').get(protect, verifyPesapalPayme
 router.put('/:id/deliver', protect, updateOrderToDelivered);
 router.put('/:id/cancel', protect, cancelOrder);
 router.put('/:id/status', protect, updateOrderStatus);
+router.post('/:id/dispute', protect, raiseOrderDispute);
+router.put('/:id/dispute/resolve', protect, admin, resolveOrderDispute);
 
 module.exports = router;
 

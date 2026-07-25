@@ -66,109 +66,119 @@ const OrdersScreen = () => {
   }, []);
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-heading font-bold text-textPrimary">Order Fulfillment</h1>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-primary">Order Fulfillment</h1>
+          <p className="text-xs text-textMuted mt-1">Track incoming customer purchases, update package dispatch, and confirm deliveries.</p>
+        </div>
+        <span className="pill-badge bg-softRose text-accent text-xs font-bold w-max">
+          {orders.length} Active Orders
+        </span>
       </div>
 
-      <div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 overflow-hidden">
+      {/* Orders Table Container */}
+      <div className="vendor-card p-6">
         {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <div className="flex justify-center items-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
           </div>
         ) : orders.length === 0 ? (
-          <div className="p-16 text-center flex flex-col items-center justify-center">
-            <div className="bg-gray-50 text-gray-400 p-6 rounded-full mb-6 shadow-inner">
-              <PackageOpen size={56} />
+          <div className="p-12 text-center flex flex-col items-center justify-center space-y-3">
+            <div className="w-14 h-14 rounded-full bg-cream text-primary flex items-center justify-center border border-borderLight shadow-xs">
+              <PackageOpen size={28} />
             </div>
-            <h3 className="text-2xl font-heading font-extrabold text-gray-800 mb-2">No Orders Yet</h3>
-            <p className="text-gray-500 max-w-md mx-auto">When customers buy your products, their orders will appear here automatically.</p>
+            <h3 className="text-base font-heading font-bold text-primary">No Orders Yet</h3>
+            <p className="text-xs text-textMuted max-w-sm">When customers purchase your products, order details and delivery info will appear here.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-gray-50/80">
-                <tr>
-                  <th className="py-4 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Order ID</th>
-                  <th className="py-4 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Customer</th>
-                  <th className="py-4 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Products</th>
-                  <th className="py-4 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Shipping</th>
-                  <th className="py-4 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Status</th>
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-borderLight text-textMuted uppercase tracking-wider font-semibold text-[10px]">
+                  <th className="py-3 px-4">Order ID</th>
+                  <th className="py-3 px-4">Customer</th>
+                  <th className="py-3 px-4">Items</th>
+                  <th className="py-3 px-4">Shipping Destination</th>
+                  <th className="py-3 px-4 text-right">Fulfillment Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-borderLight">
                 {orders.map(order => {
-                  if (!order.vendorDetails) return null; // Safety check
+                  if (!order.vendorDetails) return null;
                   const vendorItems = order.vendorDetails.items;
 
                   return (
-                    <tr key={order._id} className="hover:bg-gray-50/50 transition-colors group">
-                      <td className="py-5 px-6">
-                        <p className="font-extrabold text-gray-800">#{order._id.substring(18).toUpperCase()}</p>
-                        <p className="text-xs text-gray-400 mt-1 font-medium">{new Date(order.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                    <tr key={order._id} className="hover:bg-cream/40 transition-colors">
+                      <td className="py-4 px-4 font-semibold">
+                        <p className="font-bold text-primary text-xs">#{order._id.substring(18).toUpperCase()}</p>
+                        <p className="text-[10px] text-textMuted mt-0.5">{new Date(order.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</p>
                       </td>
-                      <td className="py-5 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600 flex items-center justify-center font-bold text-xs uppercase shadow-sm">
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-cream text-primary font-bold flex items-center justify-center text-[10px] border border-borderLight uppercase">
                             {order.user?.name ? order.user.name.substring(0, 2) : '?'}
                           </div>
                           <div>
-                            <p className="font-bold text-gray-800 text-sm">{order.user?.name || 'Unknown User'}</p>
-                            <p className="text-xs text-gray-500 font-medium">{order.user?.email}</p>
+                            <p className="font-bold text-primary text-xs">{order.user?.name || 'Customer'}</p>
+                            <p className="text-[10px] text-textMuted">{order.user?.email}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-5 px-6">
-                        <div className="space-y-1.5">
+                      <td className="py-4 px-4">
+                        <div className="space-y-1">
                           {vendorItems.map((item, idx) => (
-                            <div key={idx} className="flex items-center gap-2 text-sm text-gray-700">
-                              <span className="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md text-xs">{item.qty}x</span>
-                              <span className="font-medium line-clamp-1">{item.name}</span>
+                            <div key={idx} className="flex items-center gap-1.5 text-xs text-primary">
+                              <span className="font-bold text-accent bg-softRose px-2 py-0.5 rounded-full text-[10px]">{item.qty}x</span>
+                              <span className="font-semibold line-clamp-1">{item.name}</span>
                             </div>
                           ))}
                         </div>
                       </td>
-                      <td className="py-5 px-6">
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-start gap-2 bg-gray-50 p-2.5 rounded-lg border border-gray-100 w-max max-w-xs">
-                            <MapPin size={16} className="text-gray-400 mt-0.5 flex-shrink-0" />
-                            <p className="text-xs font-medium text-gray-600 line-clamp-2">
-                              {order.shippingAddress.address}, {order.shippingAddress.city}
-                            </p>
+                      <td className="py-4 px-4">
+                        <div className="flex items-start gap-1.5 bg-background p-2.5 rounded-xl border border-borderLight max-w-xs">
+                          <MapPin size={14} className="text-textMuted mt-0.5 flex-shrink-0" />
+                          <div className="text-[11px]">
+                            <p className="font-medium text-primary line-clamp-1">{order.shippingAddress.address}, {order.shippingAddress.city}</p>
+                            <span className="text-[10px] text-textMuted">Fee: UGX {order.vendorDetails.shippingPrice?.toLocaleString() || '0'}</span>
                           </div>
-                          <span className="text-xs font-bold text-gray-500">Fee: UGX {order.vendorDetails.shippingPrice?.toLocaleString() || '0'}</span>
                         </div>
                       </td>
-                      <td className="py-5 px-6">
+                      <td className="py-4 px-4 text-right">
                         {order.vendorDetails.isDelivered ? (
-                          <span className="bg-green-50 border border-green-100 text-green-700 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm">Delivered</span>
+                          <span className="px-3 py-1 rounded-full text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200">
+                            Delivered
+                          </span>
                         ) : (
-                          <div className="flex flex-col gap-2">
-                            <span className="bg-blue-50 border border-blue-100 text-blue-700 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider shadow-sm w-max">
+                          <div className="flex flex-col items-end gap-1.5">
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 uppercase tracking-wider">
                               {order.status || 'Pending'}
                             </span>
-                            {order.status !== 'Processing' && order.status !== 'Shipped' && (
+                            <div className="flex items-center gap-1 mt-1">
+                              {order.status !== 'Processing' && order.status !== 'Shipped' && (
+                                <button 
+                                  onClick={() => updateStatus(order._id, 'Processing')}
+                                  className="btn-secondary py-1 px-2.5 text-[10px]"
+                                >
+                                  Packing
+                                </button>
+                              )}
+                              {order.status !== 'Shipped' && (
+                                <button 
+                                  onClick={() => updateStatus(order._id, 'Shipped')}
+                                  className="btn-secondary py-1 px-2.5 text-[10px]"
+                                >
+                                  Shipped
+                                </button>
+                              )}
                               <button 
-                                onClick={() => updateStatus(order._id, 'Processing')}
-                                className="bg-amber-600 text-white text-[10px] px-3 py-1 font-bold rounded hover:bg-amber-700 transition-colors"
+                                onClick={() => markAsDelivered(order._id)}
+                                className="btn-primary py-1 px-2.5 text-[10px]"
                               >
-                                Mark Processing (Packing)
+                                Delivered
                               </button>
-                            )}
-                            {order.status !== 'Shipped' && (
-                              <button 
-                                onClick={() => updateStatus(order._id, 'Shipped')}
-                                className="bg-blue-600 text-white text-[10px] px-3 py-1 font-bold rounded hover:bg-blue-700 transition-colors"
-                              >
-                                Mark Shipped
-                              </button>
-                            )}
-                            <button 
-                              onClick={() => markAsDelivered(order._id)}
-                              className="bg-gray-900 text-white text-[10px] px-3 py-1.5 font-bold rounded shadow-sm hover:bg-gray-700 transition-colors"
-                            >
-                              Mark Delivered
-                            </button>
+                            </div>
                           </div>
                         )}
                       </td>

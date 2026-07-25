@@ -161,7 +161,12 @@ const addOrderItems = async (req, res) => {
 // @access  Private
 const getOrderById = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id).populate('user', 'name email');
+    const order = await Order.findById(req.params.id)
+      .populate('user', 'name email')
+      .populate({
+        path: 'vendorOrders.vendor',
+        select: 'name storeName phone location email'
+      });
 
     if (order) {
       res.json(order);
@@ -453,9 +458,8 @@ const getDashboardStats = async (req, res) => {
           vendorItemsTotal -= vendorOrder.discountAmount;
         }
         
-        // We use the default 10% here for aggregate stats. 
-        // In a real production app, we would query the specific vendor's commissionRate or store it in the order.
-        const cut = vendorItemsTotal * (10 / 100);
+        const rate = vendorMap[vendorOrder.vendor.toString()] || 10;
+        const cut = vendorItemsTotal * (rate / 100);
         platformCommission += cut;
       }
     }
@@ -464,8 +468,7 @@ const getDashboardStats = async (req, res) => {
     const totalVendors = await User.countDocuments({ role: 'vendor' });
 
     // Aggregate Ad Revenue
-    const vendors = await User.find({ role: 'vendor' });
-    const adRevenue = vendors.reduce((acc, v) => acc + (v.wallet?.adSpend || 0), 0);
+    const adRevenue = vendorList.reduce((acc, v) => acc + (v.wallet?.adSpend || 0), 0);
 
     res.json({
       totalOrders,
@@ -736,6 +739,68 @@ const handlePesapalIPN = async (req, res) => {
   }
 };
 
+// @desc    Raise a dispute on an order package (Buyer)
+// @route   POST /api/orders/:id/dispute
+// @access  Private
+const raiseOrderDispute = async (req, res) => {
+  try {
+    const { vendorId, reason } = req.body;
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (order.user.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ message: 'Not authorized to dispute this order' });
+    }
+
+    const vOrder = order.vendorOrders.find(vo => vo.vendor.toString() === vendorId);
+    if (!vOrder) {
+      return res.status(404).json({ message: 'Vendor package not found in this order' });
+    }
+
+    vOrder.disputeStatus = 'Open';
+    vOrder.disputeReason = reason;
+    vOrder.disputedAt = Date.now();
+
+    await order.save();
+    res.json({ message: 'Dispute submitted. Admin will review your claim.', order });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+// @desc    Resolve a package dispute (Admin)
+// @route   PUT /api/orders/:id/dispute/resolve
+// @access  Private/Admin
+const resolveOrderDispute = async (req, res) => {
+  try {
+    const { vendorId, action } = req.body; // action: 'approve_refund' or 'reject'
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const vOrder = order.vendorOrders.find(vo => vo.vendor.toString() === vendorId);
+    if (!vOrder) {
+      return res.status(404).json({ message: 'Vendor package not found in this order' });
+    }
+
+    if (action === 'approve_refund') {
+      vOrder.disputeStatus = 'Resolved_Refunded';
+    } else {
+      vOrder.disputeStatus = 'Rejected';
+    }
+
+    await order.save();
+    res.json({ message: `Dispute ${action === 'approve_refund' ? 'refund approved' : 'rejected'}`, order });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
 // @desc    Verify Pesapal Payment Status (Client-initiated fallback)
 // @route   GET /api/orders/verify-pesapal/:orderTrackingId
 // @access  Private
@@ -766,6 +831,7 @@ module.exports = {
   processPesapalPayment,
   handlePesapalIPN,
   verifyPesapalPayment,
+  raiseOrderDispute,
+  resolveOrderDispute,
   cancelOrder,
 };
-

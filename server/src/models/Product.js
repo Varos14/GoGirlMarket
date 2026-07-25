@@ -5,6 +5,7 @@ const reviewSchema = new mongoose.Schema({
   rating: { type: Number, required: true, min: 1, max: 5 },
   comment: { type: String, required: true },
   user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
+  isVerifiedBuyer: { type: Boolean, default: true },
 }, {
   timestamps: true,
 });
@@ -16,6 +17,8 @@ const productSchema = new mongoose.Schema({
   category: { type: String, required: true },
   brand: { type: String, required: true },
   price: { type: Number, required: true },
+  flashSalePrice: { type: Number },
+  flashSaleEndsAt: { type: Date },
   countInStock: { type: Number, required: true, default: 0 },
   images: [{ type: String, required: true }],
   reviews: [reviewSchema],

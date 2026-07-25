@@ -19,12 +19,26 @@ const handleChatMessage = async (req, res) => {
       return res.status(400).json({ message: 'Message is required' });
     }
 
-    // If no API key is provided, fallback to a mocked response for local dev safety
+    // If no API key is provided, use smart offline knowledge base
     if (!process.env.GEMINI_API_KEY) {
-      console.warn('GEMINI_API_KEY is missing. Using mock response.');
-      return res.json({
-        reply: "I am the GoGirl Market assistant! (Note: Gemini API key is missing, so I'm running in offline mock mode). How can I help you today?"
-      });
+      const msg = message.toLowerCase();
+      let reply = "";
+
+      if (msg.includes('shipping') || msg.includes('deliver') || msg.includes('fee') || msg.includes('location')) {
+        reply = "🚚 **GoGirl Shipping & Delivery**: Delivery fees are negotiated directly with vendors on WhatsApp after checkout! Free platform shipping applies on qualifying orders over UGX 300,000 across Uganda.";
+      } else if (msg.includes('pay') || msg.includes('pesapal') || msg.includes('flutterwave') || msg.includes('mobile money') || msg.includes('mtn') || msg.includes('airtel')) {
+        reply = "💳 **Payments**: GoGirl Market accepts Mobile Money (MTN & Airtel), Visa/Mastercard via Pesapal & Flutterwave. All funds are held safely in Escrow until item delivery is confirmed!";
+      } else if (msg.includes('dispute') || msg.includes('refund') || msg.includes('return') || msg.includes('damaged')) {
+        reply = "🛡️ **Customer Protection**: If your package is damaged or not delivered, open your Order page and click 'Claim Refund'. Our Admin team will review and refund your payment safely!";
+      } else if (msg.includes('vendor') || msg.includes('sell') || msg.includes('store') || msg.includes('boutique')) {
+        reply = "🛍️ **Selling on GoGirl Market**: Women entrepreneurs & creators can register store accounts on the Vendor Hub to publish items, boost sponsored ads, and track payouts!";
+      } else if (msg.includes('contact') || msg.includes('help') || msg.includes('support') || msg.includes('phone')) {
+        reply = "📞 **Support Team**: Email support@gogirlmarket.com or call +256 123 456 789. You can also chat directly with sellers via their WhatsApp buttons on paid orders!";
+      } else {
+        reply = "Hello! 👋 I am the GoGirl Market AI Assistant. I can help you with **Order Tracking**, **WhatsApp Delivery**, **Mobile Money Payments**, **Customer Dispute Refunds**, or **Vendor Stores**. What would you like to know?";
+      }
+
+      return res.json({ reply });
     }
 
     // Get or initialize the chat session

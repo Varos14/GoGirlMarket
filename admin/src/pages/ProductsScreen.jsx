@@ -8,8 +8,7 @@ const ProductsScreen = () => {
 
   const fetchProducts = async () => {
     try {
-      const { data } = await axios.get('/api/products?pageNumber=1');
-      // For MVP, we are just fetching the first page, but we could add pagination
+      const { data } = await axios.get('/api/products?pageSize=all');
       setProducts(data.products || []);
       setLoading(false);
     } catch (error) {
@@ -38,65 +37,81 @@ const ProductsScreen = () => {
   };
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-gray-800 flex items-center gap-3">
-            <Package size={32} className="text-primary" />
-            Product Management
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-primary flex items-center gap-2">
+            <Package size={28} className="text-accent" />
+            Global Product Management
           </h1>
-          <p className="text-gray-500 text-sm mt-1">Review all products and feature them on the homepage.</p>
+          <p className="text-xs text-textMuted mt-1">Review all products submitted by sellers and toggle homepage featured status.</p>
         </div>
+        <span className="pill-badge bg-softRose text-accent text-xs font-bold w-max">
+          {products.length} Products Listed
+        </span>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* Catalog Table Container */}
+      <div className="admin-card p-6">
         {loading ? (
-          <div className="flex justify-center items-center p-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="flex justify-center items-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg">
-            <table className="min-w-full divide-y divide-gray-100 border-collapse">
-              <thead className="bg-gray-50/80">
-                <tr>
-                  <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Product</th>
-                  <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Vendor</th>
-                  <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Price</th>
-                  <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Featured</th>
-                  <th className="px-6 py-4 text-right text-[11px] font-bold text-gray-400 uppercase tracking-wider">Actions</th>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-borderLight text-textMuted uppercase tracking-wider font-semibold text-[10px]">
+                  <th className="py-3 px-4">Product Name</th>
+                  <th className="py-3 px-4">Vendor Store</th>
+                  <th className="py-3 px-4">Price</th>
+                  <th className="py-3 px-4">Homepage Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-50">
+              <tbody className="divide-y divide-borderLight">
                 {products.map((product) => (
-                  <tr key={product._id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <tr key={product._id} className="hover:bg-cream/40 transition-colors">
+                    <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-gray-100 rounded-md overflow-hidden shrink-0">
-                           {product.images && product.images.length > 0 ? (
-                               <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-                           ) : (
-                               <div className="w-full h-full flex items-center justify-center text-gray-400"><Package size={16}/></div>
-                           )}
+                        <div className="w-10 h-10 rounded-xl bg-surface border border-borderLight overflow-hidden shrink-0 shadow-xs">
+                          {product.images && product.images.length > 0 ? (
+                            <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-textMuted"><Package size={16}/></div>
+                          )}
                         </div>
-                        <p className="font-bold text-gray-800 text-sm">{product.name}</p>
+                        <div>
+                          <p className="font-bold text-primary text-xs">{product.name}</p>
+                          <span className="pill-badge text-[9px] mt-0.5">{product.category || 'General'}</span>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">{product.vendor?.storeName || 'Unknown Vendor'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary">UGX {product.price?.toLocaleString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="py-3 px-4 font-semibold text-textMuted">
+                      {product.vendor?.storeName || product.vendor?.name || 'GoGirl Partner'}
+                    </td>
+                    <td className="py-3 px-4 font-bold text-primary">
+                      UGX {product.price?.toLocaleString()}
+                    </td>
+                    <td className="py-3 px-4">
                       {product.isFeatured ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-100">
-                          <Star size={12} fill="currentColor" /> Featured
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 inline-flex items-center gap-1">
+                          <Star size={10} fill="currentColor" /> Featured
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-500">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-textMuted bg-cream">
                           Standard
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <button onClick={() => toggleFeaturedHandler(product._id, product.isFeatured)} className={`p-2 rounded-md transition-all border border-transparent hover:shadow-md ${product.isFeatured ? 'text-amber-500 hover:text-white hover:bg-amber-500' : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50'}`} title="Toggle Featured">
-                        <Star size={16} />
+                    <td className="py-3 px-4 text-right">
+                      <button 
+                        onClick={() => toggleFeaturedHandler(product._id, product.isFeatured)} 
+                        className={`btn-secondary py-1 px-3 text-[10px] font-semibold ${product.isFeatured ? 'bg-amber-50 text-amber-700 border border-amber-200' : ''}`}
+                        title="Toggle Homepage Featured Status"
+                      >
+                        {product.isFeatured ? 'Unfeature' : 'Feature'}
                       </button>
                     </td>
                   </tr>

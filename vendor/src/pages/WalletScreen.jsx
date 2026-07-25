@@ -86,53 +86,62 @@ const WalletScreen = () => {
 
   const getStatusBadge = (status) => {
     switch(status) {
-      case 'pending': return <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Pending</span>;
-      case 'completed': return <span className="bg-emerald-100 text-emerald-700 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Completed</span>;
-      case 'failed': return <span className="bg-rose-100 text-rose-700 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Failed</span>;
+      case 'pending': return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200">Pending</span>;
+      case 'completed': return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200">Completed</span>;
+      case 'failed': return <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200">Failed</span>;
       default: return null;
     }
   };
 
   return (
-    <div>
-      <h1 className="text-3xl font-heading font-bold text-textPrimary mb-8">Wallet & Payouts</h1>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-primary">Wallet & Payouts</h1>
+          <p className="text-xs text-textMuted mt-1">Manage payout requests, available store revenue balance, and transaction history.</p>
+        </div>
+        <span className="pill-badge bg-softRose text-accent text-xs font-bold w-max">
+          UGX {wallet.availableBalance.toLocaleString()} Available
+        </span>
+      </div>
       
       {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Balances & Withdraw */}
+          {/* Left Column: Balances & Withdraw Form */}
           <div className="lg:col-span-1 space-y-6">
             
             {/* Available Balance */}
-            <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-6 rounded-2xl shadow-lg text-white">
-              <div className="flex justify-between items-start mb-2">
-                <p className="text-white/80 font-medium text-sm uppercase tracking-wider">Available Balance</p>
-                <div className="bg-white/20 p-2 rounded-full backdrop-blur-sm"><Banknote size={20}/></div>
+            <div className="vendor-card p-6 bg-gradient-to-br from-surface to-background border-borderLight flex flex-col justify-between">
+              <div className="flex justify-between items-start mb-3">
+                <span className="pill-badge bg-emerald-50 text-emerald-600 border border-emerald-100">Ready to Withdraw</span>
+                <div className="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100"><Banknote size={18}/></div>
               </div>
-              <h2 className="text-4xl font-bold font-heading mb-1">UGX {wallet.availableBalance.toLocaleString()}</h2>
-              <p className="text-emerald-100 text-xs">Ready for withdrawal</p>
+              <p className="text-xs font-semibold text-textMuted uppercase tracking-wider mb-1">Available Balance</p>
+              <h2 className="text-3xl font-heading font-bold text-primary">UGX {wallet.availableBalance.toLocaleString()}</h2>
             </div>
 
             {/* Pending Balance */}
-            <div className="bg-gradient-to-br from-orange-400 to-amber-500 p-6 rounded-2xl shadow-lg text-white">
-              <div className="flex justify-between items-start mb-2">
-                <p className="text-white/80 font-medium text-sm uppercase tracking-wider">Pending Balance</p>
-                <div className="bg-white/20 p-2 rounded-full backdrop-blur-sm"><Clock size={20}/></div>
+            <div className="vendor-card p-6 bg-gradient-to-br from-surface to-background border-borderLight flex flex-col justify-between">
+              <div className="flex justify-between items-start mb-3">
+                <span className="pill-badge bg-amber-50 text-amber-600 border border-amber-100">Clears post delivery</span>
+                <div className="w-9 h-9 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100"><Clock size={18}/></div>
               </div>
-              <h2 className="text-3xl font-bold font-heading mb-1">UGX {wallet.pendingBalance.toLocaleString()}</h2>
-              <p className="text-amber-100 text-xs">Clears 3 days after delivery</p>
+              <p className="text-xs font-semibold text-textMuted uppercase tracking-wider mb-1">Pending Clearance</p>
+              <h2 className="text-2xl font-heading font-bold text-primary">UGX {wallet.pendingBalance.toLocaleString()}</h2>
             </div>
 
             {/* Withdraw Form */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-              <h3 className="font-heading font-bold text-xl mb-4 text-gray-800 border-b pb-2">Request Withdrawal</h3>
+            <div className="vendor-card p-6">
+              <h3 className="font-heading font-bold text-base text-primary mb-4 border-b border-borderLight pb-3">Request Payout</h3>
               
               {message.text && (
-                <div className={`p-3 rounded-lg mb-4 text-sm font-medium flex items-start gap-2 ${message.type === 'error' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
-                  {message.type === 'error' ? <AlertCircle size={16} className="mt-0.5 flex-shrink-0"/> : <CheckCircle size={16} className="mt-0.5 flex-shrink-0"/>}
+                <div className={`p-3 rounded-2xl mb-4 text-xs font-semibold flex items-start gap-2 ${message.type === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+                  {message.type === 'error' ? <AlertCircle size={15} className="mt-0.5 flex-shrink-0"/> : <CheckCircle size={15} className="mt-0.5 flex-shrink-0"/>}
                   <p>{message.text}</p>
                 </div>
               )}

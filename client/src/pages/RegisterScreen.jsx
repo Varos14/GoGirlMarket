@@ -36,91 +36,89 @@ const RegisterScreen = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-16 p-8 bg-white rounded-xl shadow-lg border border-gray-100">
-      <h1 className="text-3xl font-heading font-bold mb-6 text-center text-textPrimary">Create Account</h1>
-      
-      {customMessage && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg mb-6 shadow-sm text-sm font-medium text-center flex flex-col items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          {customMessage}
+    <div className="max-w-md mx-auto my-16 px-4">
+      <div className="bg-surface p-8 sm:p-10 rounded-3xl border border-borderLight shadow-xs space-y-6">
+        <div className="text-center space-y-2">
+          <span className="text-3xl">🛍️</span>
+          <h1 className="text-2xl font-heading font-bold text-primary">Create Account</h1>
+          <p className="text-xs text-textMuted">Join GoGirl Market to start shopping fashion & lifestyle</p>
         </div>
-      )}
 
-      {message && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">{message}</div>}
-      {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">{error}</div>}
-      
-      <form onSubmit={submitHandler} className="space-y-4">
-        <div>
-          <label className="block text-gray-700 font-semibold mb-2">Full Name</label>
-          <input
-            type="text"
-            required
-            className="w-full p-3 border rounded-md outline-none focus:border-primary transition-colors"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Jane Doe"
-          />
-        </div>
-        <div>
-          <label className="block text-gray-700 font-semibold mb-2">Email Address</label>
-          <input
-            type="email"
-            required
-            className="w-full p-3 border rounded-md outline-none focus:border-primary transition-colors"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-          />
-        </div>
-        <div>
-          <label className="block text-gray-700 font-semibold mb-2">Password</label>
-          <input
-            type="password"
-            required
-            className="w-full p-3 border rounded-md outline-none focus:border-primary transition-colors"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-          />
-        </div>
-        <div>
-          <label className="block text-gray-700 font-semibold mb-2">Confirm Password</label>
-          <input
-            type="password"
-            required
-            className="w-full p-3 border rounded-md outline-none focus:border-primary transition-colors"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="••••••••"
-          />
-        </div>
+        {customMessage && (
+          <div className="bg-cream text-primary p-3 rounded-2xl text-xs border border-borderLight text-center font-medium">
+            {customMessage}
+          </div>
+        )}
+
+        {message && <div className="bg-red-50 text-red-700 p-3 rounded-2xl text-xs border border-red-200 text-center">{message}</div>}
+        {error && <div className="bg-red-50 text-red-700 p-3 rounded-2xl text-xs border border-red-200 text-center">{error}</div>}
         
-        <button 
-          type="submit" 
-          disabled={loading}
-          className={`w-full btn-primary py-3 text-lg mt-6 flex justify-center items-center ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
-        >
-          {loading ? (
-            <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-          ) : (
-            'Register'
-          )}
-        </button>
-      </form>
-      
-      <div className="mt-6 text-center">
-        <p className="text-gray-600">
-          Already have an account?{' '}
-          <Link 
-            to={redirect ? `/login?redirect=${redirect}` : '/login'} 
-            state={{ message: customMessage }}
-            className="text-primary font-bold hover:underline"
+        <form onSubmit={submitHandler} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-textMuted mb-1">Full Name</label>
+            <input
+              type="text"
+              required
+              className="w-full bg-background border border-borderLight text-xs p-3 rounded-xl outline-none focus:border-accent"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Jane Doe"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-textMuted mb-1">Email Address</label>
+            <input
+              type="email"
+              required
+              className="w-full bg-background border border-borderLight text-xs p-3 rounded-xl outline-none focus:border-accent"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-textMuted mb-1">Password</label>
+            <input
+              type="password"
+              required
+              className="w-full bg-background border border-borderLight text-xs p-3 rounded-xl outline-none focus:border-accent"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-textMuted mb-1">Confirm Password</label>
+            <input
+              type="password"
+              required
+              className="w-full bg-background border border-borderLight text-xs p-3 rounded-xl outline-none focus:border-accent"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full btn-primary py-3.5 text-xs font-semibold shadow-md hover:shadow-lg transition-all"
           >
-            Login
-          </Link>
-        </p>
+            {loading ? 'Creating Account...' : 'Register Account'}
+          </button>
+        </form>
+
+        <div className="text-center pt-2 border-t border-borderLight">
+          <p className="text-xs text-textMuted">
+            Already have an account?{' '}
+            <Link to={redirect ? `/login?redirect=${redirect}` : '/login'} className="font-bold text-accent hover:underline">
+              Sign In
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

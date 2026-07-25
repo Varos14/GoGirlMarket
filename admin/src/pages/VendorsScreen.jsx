@@ -102,100 +102,120 @@ const VendorsScreen = () => {
   };
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-gray-800 flex items-center gap-3">
-            <Store size={32} className="text-primary" />
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-primary flex items-center gap-2">
+            <Store size={28} className="text-accent" />
             Vendor Management
           </h1>
-          <p className="text-gray-500 text-sm mt-1">Review and manage store owners selling on GoGirl Market.</p>
+          <p className="text-xs text-textMuted mt-1">Review store verifications, commission rates, and seller platform access.</p>
         </div>
+        <span className="pill-badge bg-softRose text-accent text-xs font-bold w-max">
+          {vendors.length} Registered Stores
+        </span>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* Vendors Table */}
+      <div className="admin-card p-6">
         {loading ? (
-          <div className="flex justify-center items-center p-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="flex justify-center items-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg">
-            <table className="min-w-full divide-y divide-gray-100 border-collapse">
-              <thead className="bg-gray-50/80">
-                <tr>
-                  <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Store / Vendor</th>
-                  <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Joined Date</th>
-                  <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Status / Comm.</th>
-                  <th className="px-6 py-4 text-right text-[11px] font-bold text-gray-400 uppercase tracking-wider">Actions</th>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-borderLight text-textMuted uppercase tracking-wider font-semibold text-[10px]">
+                  <th className="py-3 px-4">Store / Vendor</th>
+                  <th className="py-3 px-4">Contact Email</th>
+                  <th className="py-3 px-4">Joined Date</th>
+                  <th className="py-3 px-4">Verification & Fee</th>
+                  <th className="py-3 px-4 text-right">Admin Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-50">
+              <tbody className="divide-y divide-borderLight">
                 {vendors.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="py-8 text-center text-gray-500 font-medium">No active vendors found.</td>
+                    <td colSpan="5" className="py-8 text-center text-textMuted font-medium">No registered vendors found.</td>
                   </tr>
                 ) : (
                   vendors.map((vendor) => (
-                    <tr key={vendor._id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl shadow-md flex items-center justify-center">
-                            <Store size={20} />
+                    <tr key={vendor._id} className="hover:bg-cream/40 transition-colors">
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-cream text-primary font-bold flex items-center justify-center text-xs border border-borderLight uppercase">
+                            {vendor.storeName ? vendor.storeName.substring(0, 2) : vendor.name.substring(0, 2)}
                           </div>
                           <div>
-                            <p className="font-bold text-gray-800 text-sm">{vendor.storeName || 'Unnamed Store'}</p>
-                            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{vendor.name}</p>
+                            <p className="font-bold text-primary text-xs flex items-center gap-1">
+                              {vendor.storeName || vendor.name}
+                              {vendor.isVerified && <BadgeCheck size={14} className="text-emerald-500" />}
+                            </p>
+                            <p className="text-[10px] text-textMuted">Owner: {vendor.name}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">{vendor.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">{new Date(vendor.createdAt).toLocaleDateString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col gap-1">
+                      <td className="py-4 px-4 font-medium text-textMuted">
+                        {vendor.email}
+                      </td>
+                      <td className="py-4 px-4 text-textMuted">
+                        {new Date(vendor.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                      </td>
+                      <td className="py-4 px-4 space-y-1">
+                        <div className="flex items-center gap-2">
                           {vendor.isVerified ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-600">
-                              <BadgeCheck size={12} /> Verified
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200">
+                              Verified Store
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-500">
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200">
                               Unverified
                             </span>
                           )}
+
                           {vendor.isApproved ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-green-50 text-green-600">
-                              <CheckCircle size={12} /> Approved
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200">
+                              Approved
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-50 text-yellow-600">
-                              Pending Auth
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200">
+                              Pending Approval
                             </span>
                           )}
-                          {vendor.isSuspended && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600">
-                              <Ban size={12} /> Suspended
-                            </span>
-                          )}
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-600">
-                            {vendor.commissionRate !== undefined ? vendor.commissionRate : 7}% Comm.
-                          </span>
                         </div>
+                        <p className="text-[10px] font-semibold text-textMuted">
+                          Commission: <span className="font-bold text-primary">{vendor.commissionRate !== undefined ? vendor.commissionRate : 7}%</span>
+                        </p>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right flex items-center justify-end gap-2">
-                        <button onClick={() => toggleVerifiedHandler(vendor._id, vendor.isVerified)} className={`p-2 rounded-md transition-all border border-transparent hover:shadow-md ${vendor.isVerified ? 'text-blue-500 hover:text-white hover:bg-blue-500' : 'text-gray-400 hover:text-blue-500 hover:bg-blue-50'}`} title="Toggle Verified Status">
-                          <BadgeCheck size={16} />
+                      <td className="py-4 px-4 text-right space-x-1.5">
+                        <button 
+                          onClick={() => toggleVerifiedHandler(vendor._id, vendor.isVerified)}
+                          className="btn-secondary py-1 px-2.5 text-[10px]"
+                          title="Toggle Verification"
+                        >
+                          {vendor.isVerified ? 'Unverify' : 'Verify'}
                         </button>
-                        <button onClick={() => toggleApproveHandler(vendor._id, vendor.isApproved)} className={`p-2 rounded-md transition-all border border-transparent hover:shadow-md ${vendor.isApproved ? 'text-green-500 hover:text-white hover:bg-green-500' : 'text-gray-400 hover:text-green-500 hover:bg-green-50'}`} title="Toggle Approval Status">
-                          <CheckCircle size={16} />
+                        <button 
+                          onClick={() => toggleApproveHandler(vendor._id, vendor.isApproved)}
+                          className="btn-primary py-1 px-2.5 text-[10px]"
+                        >
+                          {vendor.isApproved ? 'Unapprove' : 'Approve'}
                         </button>
-                        <button onClick={() => updateCommissionHandler(vendor._id, vendor.commissionRate)} className="text-purple-500 hover:text-white hover:bg-purple-500 transition-all p-2 rounded-md border border-transparent hover:shadow-md" title="Update Commission Rate">
-                          <Percent size={16} />
+                        <button 
+                          onClick={() => updateCommissionHandler(vendor._id, vendor.commissionRate)}
+                          className="p-1.5 text-textMuted hover:text-accent rounded-lg hover:bg-cream transition-colors"
+                          title="Set Commission"
+                        >
+                          <Percent size={15} />
                         </button>
-                        <button onClick={() => toggleSuspendHandler(vendor._id, vendor.isSuspended)} className={`p-2 rounded-md transition-all border border-transparent hover:shadow-md ${vendor.isSuspended ? 'text-red-500 hover:text-white hover:bg-red-500' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`} title={vendor.isSuspended ? "Reinstate Vendor" : "Suspend Vendor"}>
-                          <Ban size={16} />
-                        </button>
-                        <button onClick={() => revokeVendorHandler(vendor._id)} className="text-red-500 hover:text-white hover:bg-red-500 transition-all p-2 rounded-md border border-transparent hover:shadow-md" title="Revoke Vendor Status">
-                          <Trash2 size={16} />
+                        <button 
+                          onClick={() => revokeVendorHandler(vendor._id)}
+                          className="p-1.5 text-textMuted hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                          title="Revoke Role"
+                        >
+                          <Trash2 size={15} />
                         </button>
                       </td>
                     </tr>

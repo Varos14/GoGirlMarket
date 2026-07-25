@@ -285,11 +285,11 @@ const PlaceOrderScreen = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg border border-green-100">
+              <div className="flex items-center justify-center gap-2 text-emerald-600 bg-emerald-50 p-3 rounded-2xl border border-emerald-200">
                 <ShieldCheck size={20} />
                 <div className="text-xs">
                   <p className="font-bold uppercase tracking-wider">Secure Payment</p>
-                  <p className="text-green-700">Protected by Flutterwave</p>
+                  <p className="text-emerald-700">Protected by Pesapal</p>
                 </div>
               </div>
             )}

@@ -5,23 +5,69 @@ const Order = require('../models/Order');
 // @route   GET /api/products
 // @access  Public
 const getProducts = async (req, res) => {
-  const pageSize = 12;
+  const isAll = req.query.pageSize === 'all';
+  const pageSize = isAll ? 1000 : (Number(req.query.pageSize) || 12);
   const page = Number(req.query.pageNumber) || 1;
 
-  // Search keyword
-  const keyword = req.query.keyword
-    ? {
+  // Search keyword with alias support
+  let keyword = {};
+  if (req.query.keyword) {
+    const kwLower = req.query.keyword.trim().toLowerCase();
+    if (kwLower === 'shoes' || kwLower === 'shoe') {
+      keyword = {
         $or: [
-          { name: { $regex: req.query.keyword, $options: 'i' } },
-          { description: { $regex: req.query.keyword, $options: 'i' } },
-          { category: { $regex: req.query.keyword, $options: 'i' } },
-          { brand: { $regex: req.query.keyword, $options: 'i' } },
+          { category: /shoes/i },
+          { brand: /prime trends|varos kicks|kicks|sneaker/i },
+          { name: /shoe|kick|sneaker|heel|boot|sandal/i },
+          { description: /shoe|kick|sneaker|heel|boot|sandal/i }
+        ]
+      };
+    } else {
+      const escapedKw = req.query.keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      keyword = {
+        $or: [
+          { name: { $regex: escapedKw, $options: 'i' } },
+          { description: { $regex: escapedKw, $options: 'i' } },
+          { category: { $regex: escapedKw, $options: 'i' } },
+          { brand: { $regex: escapedKw, $options: 'i' } },
         ],
-      }
-    : {};
+      };
+    }
+  }
 
-  // Category filter
-  const category = req.query.category ? { category: req.query.category } : {};
+  // Category filter with brand alias support
+  let category = {};
+  if (req.query.category) {
+    const catLower = req.query.category.toLowerCase();
+
+    if (catLower === 'shoes') {
+      category = {
+        $or: [
+          { category: /shoes/i },
+          { brand: /prime trends|varos kicks|kicks|sneaker/i },
+          { name: /shoe|kick|sneaker|heel|boot|sandal/i }
+        ]
+      };
+    } else if (catLower === 'accessories') {
+      category = {
+        $or: [
+          { category: /accessories/i },
+          { brand: /dave collection|dave/i },
+          { name: /accessory|accessories|bag|watch|jewelry/i }
+        ]
+      };
+    } else {
+      const escapedCategory = req.query.category.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escapedCategory, 'i');
+      category = {
+        $or: [
+          { category: regex },
+          { brand: regex },
+          { name: regex }
+        ]
+      };
+    }
+  }
 
   // Vendor filter
   const vendor = req.query.vendor ? { vendor: req.query.vendor } : {};
@@ -40,11 +86,13 @@ const getProducts = async (req, res) => {
 
   try {
     const count = await Product.countDocuments(query);
-    const products = await Product.find(query)
-      .populate('vendor', 'storeName')
-      .limit(pageSize)
-      .skip(pageSize * (page - 1))
-      .sort(sortCriteria);
+    let productQuery = Product.find(query).populate('vendor', 'storeName name');
+    
+    if (!isAll) {
+      productQuery = productQuery.limit(pageSize).skip(pageSize * (page - 1));
+    }
+    
+    const products = await productQuery.sort(sortCriteria);
 
     res.json({ products, page, pages: Math.ceil(count / pageSize), count });
   } catch (error) {
@@ -73,7 +121,7 @@ const getProductById = async (req, res) => {
 // @access  Private/Vendor
 const createProduct = async (req, res) => {
   const { name, price, description, category, brand, countInStock, images } = req.body;
-  
+
   if (!images || images.length === 0) {
     return res.status(400).json({ message: 'At least one image is required' });
   }
@@ -173,7 +221,7 @@ const createProductReview = async (req, res) => {
 
       // Check if user has purchased the item and it was paid for
       const orders = await Order.find({ user: req.user._id, isPaid: true });
-      const hasPurchased = orders.some(order => 
+      const hasPurchased = orders.some(order =>
         order.orderItems.some(item => item.product.toString() === req.params.id.toString())
       );
 
@@ -186,6 +234,7 @@ const createProductReview = async (req, res) => {
         rating: Number(rating),
         comment,
         user: req.user._id,
+        isVerifiedBuyer: true,
       };
 
       product.reviews.push(review);
@@ -249,7 +298,7 @@ const importProductsCSV = async (req, res) => {
         if (results.length === 0) {
           return res.status(400).json({ message: 'No valid products found in CSV. Make sure columns are named Name, Price, Stock, Description, Category, Brand.' });
         }
-        
+
         await Product.insertMany(results);
         res.status(201).json({ message: `Successfully imported ${results.length} products`, count: results.length });
       } catch (error) {
@@ -293,7 +342,7 @@ const sponsorProduct = async (req, res) => {
       }
 
       const vendor = await require('../models/User').findById(product.vendor);
-      
+
       // If trying to turn on sponsorship, check if they have credits
       if (!product.isSponsored) {
         if (!vendor.wallet || !vendor.wallet.boostCredits || vendor.wallet.boostCredits <= 0) {
@@ -321,23 +370,23 @@ const clickSponsoredProduct = async (req, res) => {
 
     if (product && product.isSponsored) {
       const vendor = await require('../models/User').findById(product.vendor);
-      
+
       if (vendor && vendor.wallet && vendor.wallet.boostCredits > 0) {
         vendor.wallet.boostCredits -= 1;
-        
+
         // If credits ran out, disable all sponsored products for this vendor
         if (vendor.wallet.boostCredits <= 0) {
           vendor.wallet.boostCredits = 0;
           await Product.updateMany({ vendor: vendor._id }, { isSponsored: false });
         }
-        
+
         await vendor.save();
       } else {
         // Fallback: If they somehow got a click with no credits, disable this product's sponsorship
         product.isSponsored = false;
         await product.save();
       }
-      
+
       res.json({ message: 'Click registered' });
     } else {
       res.status(404).json({ message: 'Product not found or not sponsored' });

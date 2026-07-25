@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,18 +6,35 @@
 
 @layer base {
   body {
-    @apply bg-background text-textPrimary font-sans antialiased;
+    @apply bg-background text-textPrimary font-sans antialiased selection:bg-accent selection:text-white;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading font-semibold text-textPrimary;
+    @apply font-heading text-textPrimary tracking-tight;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-primary text-white font-heading font-semibold py-2 px-6 rounded-md hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-md;
+    @apply bg-primary text-white font-sans font-semibold py-3 px-6 rounded-full hover:bg-opacity-90 transition-all duration-200 shadow-sm active:scale-95 disabled:opacity-50;
   }
   .btn-secondary {
-    @apply bg-secondary text-white font-heading font-semibold py-2 px-6 rounded-md hover:bg-opacity-90 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-md;
+    @apply bg-cream text-textPrimary font-sans font-semibold py-3 px-6 rounded-full hover:bg-softRose transition-all duration-200 active:scale-95;
   }
+  .btn-accent {
+    @apply bg-accent text-white font-sans font-semibold py-3 px-6 rounded-full hover:bg-opacity-95 transition-all duration-200 shadow-md active:scale-95;
+  }
+  .admin-card {
+    @apply bg-surface rounded-3xl border border-borderLight shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden;
+  }
+  .pill-badge {
+    @apply px-3 py-1 text-xs font-semibold rounded-full bg-cream text-textPrimary inline-flex items-center gap-1;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

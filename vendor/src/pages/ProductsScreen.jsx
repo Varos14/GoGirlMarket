@@ -10,6 +10,7 @@ const ProductsScreen = () => {
   // Form State
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
+  const [flashSalePrice, setFlashSalePrice] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [brand, setBrand] = useState('');
@@ -198,6 +199,7 @@ const ProductsScreen = () => {
       const productData = {
         name,
         price: Number(price),
+        flashSalePrice: flashSalePrice ? Number(flashSalePrice) : undefined,
         description,
         category,
         brand,
@@ -213,6 +215,7 @@ const ProductsScreen = () => {
       // Reset form
       setName('');
       setPrice('');
+      setFlashSalePrice('');
       setDescription('');
       setCategory('');
       setBrand('');
@@ -326,21 +329,23 @@ const ProductsScreen = () => {
       <div className="flex-1">
         
         {/* Boost Credits Banner */}
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-6 mb-8 text-white flex flex-col sm:flex-row justify-between items-center shadow-md">
-          <div className="flex items-center gap-4 mb-4 sm:mb-0">
-            <div className="bg-white/20 p-3 rounded-full">
-              <Zap size={24} className="text-yellow-300" />
+        <div className="vendor-card p-6 mb-8 bg-gradient-to-br from-surface to-background border-borderLight flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center">
+              <Zap size={24} className="fill-amber-500" />
             </div>
             <div>
-              <h3 className="font-bold text-lg">Sponsored Products</h3>
-              <p className="text-white/80 text-sm">Boost Credits Available: <span className="font-extrabold text-xl ml-1">{vendorWallet?.boostCredits || 0}</span></p>
+              <h3 className="font-heading font-bold text-base text-primary">Sponsored Ad Promotion Boosts</h3>
+              <p className="text-xs text-textMuted mt-0.5">
+                Boost Credits Available: <span className="font-bold text-primary text-sm">{vendorWallet?.boostCredits || 0} Credits</span>
+              </p>
             </div>
           </div>
           <button 
             onClick={buyCreditsHandler}
-            className="bg-white text-indigo-600 font-bold px-6 py-2.5 rounded-full hover:bg-gray-50 transition-colors shadow-sm"
+            className="btn-primary py-2.5 px-5 text-xs font-bold shadow-xs shrink-0"
           >
-            Buy 50 Credits (10k UGX)
+            Buy 50 Boost Credits (UGX 10,000)
           </button>
         </div>
 
@@ -385,92 +390,107 @@ const ProductsScreen = () => {
 
         {csvError && <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm font-medium">{csvError}</div>}
         {csvSuccess && <div className="bg-green-50 border border-green-100 text-green-600 px-4 py-3 rounded-lg mb-6 text-sm font-medium">{csvSuccess}</div>}
+      </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          {loadingProducts ? (
-            <div className="flex justify-center items-center h-48">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : products.length === 0 ? (
-            <div className="p-16 text-center flex flex-col items-center justify-center">
-              <div className="bg-primary/10 text-primary p-4 rounded-full mb-4">
-                <PackagePlus size={40} />
-              </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">No Products Yet</h3>
-              <p className="text-gray-500 max-w-sm">
-                You haven't added any products to your store. Use the form to create your first listing and start selling!
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-gray-50/80">
-                  <tr>
-                    <th className="py-4 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Product</th>
-                    <th className="py-4 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Price</th>
-                    <th className="py-4 px-6 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Stock</th>
-                    <th className="py-4 px-6 text-right text-[11px] font-bold text-gray-400 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {products.map(product => (
-                    <tr key={product._id} className="hover:bg-gray-50/50 transition-colors group">
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-4">
-                          <img src={product.images[0]} alt={product.name} className="h-12 w-12 object-cover rounded-xl shadow-sm border border-gray-100" />
-                          <div>
-                            <p className="font-bold text-gray-800 text-sm line-clamp-1">{product.name}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <p className="text-xs text-gray-400">{product.category}</p>
-                              {product.isFeatured && (
-                                <span className="flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wider bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded border border-amber-100">
-                                  <Star size={8} fill="currentColor" /> Featured
-                                </span>
-                              )}
-                              {product.isSponsored && (
-                                <span className="flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-100">
-                                  <TrendingUp size={8} /> Sponsored
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-sm font-bold text-gray-800">UGX {product.price.toLocaleString()}</td>
-                      <td className="py-4 px-6">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${product.countInStock > 0 ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-red-50 text-red-600 border border-red-100'
-                          }`}>
-                          {product.countInStock > 0 ? `${product.countInStock} in stock` : 'Out of Stock'}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-right flex justify-end gap-2">
-                        <button onClick={() => openEditModal(product)} className="text-gray-400 hover:text-blue-500 transition-colors p-2 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100" title="Edit Product">
-                          <Edit size={18} />
-                        </button>
-                        <button onClick={() => sponsorHandler(product._id)} className={`transition-colors p-2 rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100 ${product.isSponsored ? 'text-indigo-600 hover:bg-indigo-50' : 'text-gray-400 hover:text-indigo-500 hover:bg-indigo-50'}`} title={product.isSponsored ? "Stop Sponsoring" : "Sponsor Product"}>
-                          <TrendingUp size={18} />
-                        </button>
-                        <button onClick={() => deleteHandler(product._id)} className="text-gray-400 hover:text-red-500 transition-colors p-2 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 focus:opacity-100" title="Delete Product">
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+      {/* Product List Table / Grid */}
+      <div className="vendor-card p-6">
+        <div className="flex justify-between items-center mb-6 border-b border-borderLight pb-4">
+          <h2 className="text-lg font-heading font-bold text-primary">Your Catalog</h2>
+          <span className="text-xs text-textMuted">Showing {products.length} products</span>
         </div>
+
+        {loadingProducts ? (
+          <div className="flex justify-center items-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-12 space-y-3">
+            <span className="text-4xl">🛍️</span>
+            <p className="text-xs font-semibold text-textMuted">No products found in your store catalog yet.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-borderLight text-textMuted uppercase tracking-wider font-semibold text-[10px]">
+                  <th className="py-3 px-4">Product</th>
+                  <th className="py-3 px-4">Category</th>
+                  <th className="py-3 px-4">Price</th>
+                  <th className="py-3 px-4">Stock</th>
+                  <th className="py-3 px-4">Sponsored Ad</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-borderLight">
+                {products.map((prod) => (
+                  <tr key={prod._id} className="hover:bg-cream/40 transition-colors">
+                    <td className="py-3 px-4 flex items-center gap-3">
+                      <img src={prod.images?.[0]} alt={prod.name} className="w-10 h-10 rounded-xl object-cover border border-borderLight" />
+                      <div>
+                        <p className="font-bold text-primary text-xs">{prod.name}</p>
+                        <p className="text-[10px] text-textMuted">{prod.brand || 'Boutique'}</p>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 font-semibold text-textMuted">
+                      <span className="pill-badge">{prod.category}</span>
+                    </td>
+                    <td className="py-3 px-4 font-bold text-primary">
+                      UGX {prod.price?.toLocaleString()}
+                    </td>
+                    <td className="py-3 px-4">
+                      {prod.countInStock > 0 ? (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200">
+                          In Stock ({prod.countInStock})
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200">
+                          Out of Stock
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      <button
+                        onClick={() => sponsorHandler(prod._id)}
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 transition-all ${
+                          prod.isSponsored 
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200 shadow-xs' 
+                            : 'bg-cream text-textMuted hover:text-accent border border-borderLight'
+                        }`}
+                      >
+                        <Zap size={12} className={prod.isSponsored ? 'fill-amber-500 text-amber-500' : ''} />
+                        {prod.isSponsored ? 'Sponsored Ad (Active)' : 'Boost Product'}
+                      </button>
+                    </td>
+                    <td className="py-3 px-4 text-right space-x-2">
+                      <button 
+                        onClick={() => openEditModal(prod)}
+                        className="p-1.5 text-textMuted hover:text-accent rounded-lg hover:bg-cream transition-colors"
+                        title="Edit Product"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button 
+                        onClick={() => deleteProductHandler(prod._id)}
+                        className="p-1.5 text-textMuted hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                        title="Delete Product"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Right Col: Add Form */}
-      <div className="lg:w-[450px]">
-        <div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-gray-100 p-8 sticky top-28">
-          <h2 className="text-2xl font-heading font-extrabold mb-6 flex items-center gap-3 text-gray-800">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-              <PackagePlus size={20} />
-            </div>
-            Add Product
+      <div className="w-full lg:w-[420px] shrink-0">
+        <div className="vendor-card p-6 sm:p-8 sticky top-24">
+          <h2 className="text-xl font-heading font-bold mb-6 flex items-center gap-2 text-primary">
+            <PackagePlus size={20} className="text-accent" />
+            Add New Product
           </h2>
 
           {error && <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm font-medium">{error}</div>}
@@ -489,24 +509,34 @@ const ProductsScreen = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-5">
+            <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Price (UGX)</label>
+                <label className="block text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-1.5">Regular Price (UGX)</label>
                 <input
                   type="number"
                   required
-                  className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800 placeholder-gray-400"
+                  className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-xs font-medium text-gray-800 placeholder-gray-400"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="0"
                 />
               </div>
               <div>
-                <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">Stock</label>
+                <label className="block text-[10px] uppercase tracking-wider text-accent font-bold mb-1.5">Flash Sale Price</label>
+                <input
+                  type="number"
+                  className="w-full px-3 py-2.5 bg-rose-50/50 border border-rose-200 rounded-xl outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all text-xs font-bold text-accent placeholder-rose-300"
+                  value={flashSalePrice || ''}
+                  onChange={(e) => setFlashSalePrice(e.target.value)}
+                  placeholder="Optional"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-1.5">Stock</label>
                 <input
                   type="number"
                   required
-                  className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800 placeholder-gray-400"
+                  className="w-full px-3 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-xs font-medium text-gray-800 placeholder-gray-400"
                   value={countInStock}
                   onChange={(e) => setCountInStock(e.target.value)}
                   placeholder="0"

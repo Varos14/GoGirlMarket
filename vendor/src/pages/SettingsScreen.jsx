@@ -161,6 +161,17 @@ const SettingsScreen = () => {
                     onChange={(e) => setStoreName(e.target.value)}
                   />
                 </div>
+                <div>
+                  <label className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold mb-2">WhatsApp / Contact Phone Number</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. +256771234567"
+                    className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium text-gray-800"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <div>

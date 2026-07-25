@@ -62,67 +62,82 @@ const UsersScreen = () => {
   };
 
   return (
-    <div>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-gray-800 flex items-center gap-3">
-            <Users size={32} className="text-primary" />
-            User Management
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-primary flex items-center gap-2">
+            <Users size={28} className="text-accent" />
+            User Account Management
           </h1>
-          <p className="text-gray-500 text-sm mt-1">Manage platform users, roles, and access.</p>
+          <p className="text-xs text-textMuted mt-1">Manage customer, seller, and administrator accounts across GoGirl Market.</p>
         </div>
+        <span className="pill-badge bg-softRose text-accent text-xs font-bold w-max">
+          {users.length} Total Registered Accounts
+        </span>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* Users Table */}
+      <div className="admin-card p-6">
         {loading ? (
-          <div className="flex justify-center items-center p-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="flex justify-center items-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg">
-            <table className="min-w-full divide-y divide-gray-100 border-collapse">
-              <thead className="bg-gray-50/80">
-                <tr>
-                  <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">User</th>
-                  <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-4 text-left text-[11px] font-bold text-gray-400 uppercase tracking-wider">Joined</th>
-                  <th className="px-6 py-4 text-right text-[11px] font-bold text-gray-400 uppercase tracking-wider">Actions</th>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-borderLight text-textMuted uppercase tracking-wider font-semibold text-[10px]">
+                  <th className="py-3 px-4">User Account</th>
+                  <th className="py-3 px-4">Email Address</th>
+                  <th className="py-3 px-4">Account Role</th>
+                  <th className="py-3 px-4">Joined Date</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-50">
+              <tbody className="divide-y divide-borderLight">
                 {users.map((user) => (
-                  <tr key={user._id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <tr key={user._id} className="hover:bg-cream/40 transition-colors">
+                    <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs uppercase">
+                        <div className="w-9 h-9 rounded-full bg-cream text-primary font-bold flex items-center justify-center text-xs border border-borderLight uppercase">
                           {user.name.substring(0, 2)}
                         </div>
-                        <p className="font-bold text-gray-800 text-sm">{user.name}</p>
+                        <p className="font-bold text-primary text-xs">{user.name}</p>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">{user.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm border ${
-                        user.role === 'admin' ? 'bg-purple-50 text-purple-600 border-purple-100' :
-                        user.role === 'vendor' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                        'bg-green-50 text-green-600 border-green-100'
+                    <td className="py-4 px-4 font-medium text-textMuted">
+                      {user.email}
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        user.role === 'admin' ? 'bg-purple-50 text-purple-700 border border-purple-200' :
+                        user.role === 'vendor' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                        'bg-emerald-50 text-emerald-700 border border-emerald-200'
                       }`}>
                         {user.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">{new Date(user.createdAt).toLocaleDateString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="flex justify-end gap-2">
-                        {user.role === 'customer' && (
-                          <button onClick={() => makeVendorHandler(user._id)} className="text-blue-500 hover:text-white hover:bg-blue-500 transition-all p-2 rounded-md border border-transparent hover:shadow-md" title="Promote to Vendor">
-                            <Store size={16} />
-                          </button>
-                        )}
-                        <button onClick={() => deleteHandler(user._id)} className="text-red-500 hover:text-white hover:bg-red-500 transition-all p-2 rounded-md border border-transparent hover:shadow-md" title="Delete User">
-                          <UserX size={16} />
+                    <td className="py-4 px-4 text-textMuted">
+                      {new Date(user.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                    </td>
+                    <td className="py-4 px-4 text-right space-x-1">
+                      {user.role === 'customer' && (
+                        <button 
+                          onClick={() => makeVendorHandler(user._id)} 
+                          className="btn-secondary py-1 px-2.5 text-[10px] font-semibold"
+                          title="Promote to Vendor"
+                        >
+                          Make Vendor
                         </button>
-                      </div>
+                      )}
+                      <button 
+                        onClick={() => deleteHandler(user._id)} 
+                        className="p-1.5 text-textMuted hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                        title="Delete User Account"
+                      >
+                        <UserX size={15} />
+                      </button>
                     </td>
                   </tr>
                 ))}

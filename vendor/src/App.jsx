@@ -29,69 +29,70 @@ function App() {
 
   const isActive = (path) => {
     return location.pathname === path 
-      ? "text-primary font-bold border-b-2 border-primary" 
-      : "text-gray-600 hover:text-primary transition-colors font-semibold";
+      ? "text-accent font-bold bg-cream px-3 py-1.5 rounded-full shadow-xs" 
+      : "text-textMuted hover:text-primary transition-colors font-semibold px-3 py-1.5 rounded-full hover:bg-background";
   };
 
   return (
-    <div className="min-h-screen bg-surface font-sans flex flex-col">
+    <div className="min-h-screen bg-background font-sans text-textPrimary flex flex-col pb-16 md:pb-0">
       {/* Top Header Navigation */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
+      <header className="bg-surface/90 backdrop-blur-md sticky top-0 z-50 border-b border-borderLight transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
-            <div className="flex-shrink-0 flex items-center gap-2 sm:gap-4">
-              <img src="/logo.png" alt="GoGirl Market" className="h-8 sm:h-10 w-auto" />
-              <span className="hidden sm:block text-xl font-heading font-extrabold text-gray-800 tracking-tight border-l-2 pl-4 border-gray-200">
-                Vendor Platform
+            <div className="flex-shrink-0 flex items-center gap-3">
+              <img src="/logo.png" alt="GoGirl Market" className="h-10 sm:h-12 w-auto object-contain" />
+              <span className="hidden sm:inline-block pill-badge bg-softRose text-accent text-[10px] uppercase font-bold tracking-wider">
+                Vendor Hub
               </span>
             </div>
 
             {/* Centered Navigation (Desktop) */}
-            <nav className="hidden md:flex space-x-8">
-              <Link to="/" className={`flex items-center gap-2 py-2 ${isActive('/')}`}>
-                <LayoutDashboard size={18} />
+            <nav className="hidden md:flex items-center space-x-2 bg-background p-1.5 rounded-full border border-borderLight">
+              <Link to="/" className={`flex items-center gap-1.5 text-xs ${isActive('/')}`}>
+                <LayoutDashboard size={15} />
                 Dashboard
               </Link>
-              <Link to="/products" className={`flex items-center gap-2 py-2 ${isActive('/products')}`}>
-                <Package size={18} />
+              <Link to="/products" className={`flex items-center gap-1.5 text-xs ${isActive('/products')}`}>
+                <Package size={15} />
                 Products
               </Link>
-              <Link to="/orders" className={`flex items-center gap-2 py-2 ${isActive('/orders')}`}>
-                <ShoppingBag size={18} />
+              <Link to="/orders" className={`flex items-center gap-1.5 text-xs ${isActive('/orders')}`}>
+                <ShoppingBag size={15} />
                 Orders
               </Link>
-              <Link to="/coupons" className={`flex items-center gap-2 py-2 ${isActive('/coupons')}`}>
-                <Tag size={18} />
+              <Link to="/coupons" className={`flex items-center gap-1.5 text-xs ${isActive('/coupons')}`}>
+                <Tag size={15} />
                 Coupons
               </Link>
-              <Link to="/wallet" className={`flex items-center gap-2 py-2 ${isActive('/wallet')}`}>
-                <Wallet size={18} />
+              <Link to="/wallet" className={`flex items-center gap-1.5 text-xs ${isActive('/wallet')}`}>
+                <Wallet size={15} />
                 Wallet
               </Link>
-              <Link to="/settings" className={`flex items-center gap-2 py-2 ${isActive('/settings')}`}>
-                <Settings size={18} />
+              <Link to="/settings" className={`flex items-center gap-1.5 text-xs ${isActive('/settings')}`}>
+                <Settings size={15} />
                 Settings
               </Link>
             </nav>
 
             {/* Profile & Logout */}
-            <div className="flex items-center gap-4 sm:gap-6">
-              <div className="flex items-center gap-3">
-                <div className="text-right hidden sm:block">
-                  <p className="font-semibold text-sm text-textPrimary">{vendorInfo.name}</p>
-                  <p className="text-xs text-gray-500">{vendorInfo.storeName}</p>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-full bg-cream text-primary border border-borderLight flex items-center justify-center font-bold text-xs shadow-xs">
+                  {vendorInfo.name.substring(0, 2).toUpperCase()}
                 </div>
-                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center font-bold shadow-md uppercase text-xs sm:text-sm">
-                  {vendorInfo.name.substring(0, 2)}
+                <div className="text-left hidden lg:block">
+                  <p className="font-bold text-xs text-primary leading-tight">{vendorInfo.name}</p>
+                  <p className="text-[10px] text-textMuted">{vendorInfo.storeName || 'Vendor'}</p>
                 </div>
               </div>
+              
               <button 
                 onClick={() => {
                   localStorage.removeItem('vendorInfo');
                   window.location.href = '/';
                 }}
-                className="text-gray-400 hover:text-red-500 transition-colors p-2 hover:bg-red-50 rounded-full"
+                className="p-2 text-textMuted hover:text-accent transition-colors rounded-full hover:bg-cream"
                 title="Logout"
               >
                 <LogOut size={18} />
@@ -102,7 +103,7 @@ function App() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8 animate-fade-in">
+      <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
         <Routes>
           <Route path="/" element={<DashboardScreen />} />
           <Route path="/products" element={<ProductsScreen />} />
@@ -114,30 +115,26 @@ function App() {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center h-16 z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] pb-safe">
-        <Link to="/" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
-          <LayoutDashboard size={20} />
-          <span className="text-[10px] mt-1 font-bold tracking-wide">Dashboard</span>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-lg border-t border-borderLight flex justify-between items-center h-16 px-4 z-50 shadow-lg">
+        <Link to="/" className={`flex flex-col items-center justify-center gap-1 text-[10px] font-semibold ${location.pathname === '/' ? 'text-accent' : 'text-textMuted hover:text-accent'}`}>
+          <LayoutDashboard size={18} />
+          <span>Dashboard</span>
         </Link>
-        <Link to="/products" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/products' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
-          <Package size={20} />
-          <span className="text-[10px] mt-1 font-bold tracking-wide">Products</span>
+        <Link to="/products" className={`flex flex-col items-center justify-center gap-1 text-[10px] font-semibold ${location.pathname === '/products' ? 'text-accent' : 'text-textMuted hover:text-accent'}`}>
+          <Package size={18} />
+          <span>Products</span>
         </Link>
-        <Link to="/orders" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/orders' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
-          <ShoppingBag size={20} />
-          <span className="text-[10px] mt-1 font-bold tracking-wide">Orders</span>
+        <Link to="/orders" className={`flex flex-col items-center justify-center gap-1 text-[10px] font-semibold ${location.pathname === '/orders' ? 'text-accent' : 'text-textMuted hover:text-accent'}`}>
+          <ShoppingBag size={18} />
+          <span>Orders</span>
         </Link>
-        <Link to="/coupons" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/coupons' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
-          <Tag size={20} />
-          <span className="text-[10px] mt-1 font-bold tracking-wide">Coupons</span>
+        <Link to="/coupons" className={`flex flex-col items-center justify-center gap-1 text-[10px] font-semibold ${location.pathname === '/coupons' ? 'text-accent' : 'text-textMuted hover:text-accent'}`}>
+          <Tag size={18} />
+          <span>Coupons</span>
         </Link>
-        <Link to="/wallet" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/wallet' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
-          <Wallet size={20} />
-          <span className="text-[10px] mt-1 font-bold tracking-wide">Wallet</span>
-        </Link>
-        <Link to="/settings" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/settings' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
-          <Settings size={20} />
-          <span className="text-[10px] mt-1 font-bold tracking-wide">Settings</span>
+        <Link to="/wallet" className={`flex flex-col items-center justify-center gap-1 text-[10px] font-semibold ${location.pathname === '/wallet' ? 'text-accent' : 'text-textMuted hover:text-accent'}`}>
+          <Wallet size={18} />
+          <span>Wallet</span>
         </Link>
       </nav>
     </div>

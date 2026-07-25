@@ -124,6 +124,13 @@ const orderSchema = new mongoose.Schema(
         couponCode: { type: String },
         isDelivered: { type: Boolean, default: false },
         deliveredAt: { type: Date },
+        disputeStatus: { 
+          type: String, 
+          enum: ['None', 'Open', 'Resolved_Refunded', 'Rejected'], 
+          default: 'None' 
+        },
+        disputeReason: { type: String },
+        disputedAt: { type: Date },
       }
     ],
   },

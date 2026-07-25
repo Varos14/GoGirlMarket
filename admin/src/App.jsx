@@ -18,109 +18,110 @@ function AdminLayout() {
     return <Navigate to="/login" replace />;
   }
 
+  const isActive = (path) => {
+    return location.pathname === path 
+      ? "text-accent font-bold bg-cream px-3 py-1.5 rounded-full shadow-xs flex items-center gap-1.5" 
+      : "text-textMuted hover:text-primary transition-colors font-semibold px-3 py-1.5 rounded-full hover:bg-background flex items-center gap-1.5";
+  };
+
   return (
-    <div className="flex h-screen bg-surface font-sans">
-      {/* Sidebar - Desktop Only */}
-      <div className="hidden md:flex w-64 bg-gray-900 text-white flex-col z-20 shadow-2xl relative overflow-hidden">
-        {/* Subtle background glow effect */}
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-primary/10 to-transparent pointer-events-none"></div>
-        
-        <div className="p-4 flex-grow flex flex-col gap-2 mt-6 z-10">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-4 opacity-70">Admin Console</p>
-          
-          <Link to="/" className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${location.pathname === '/' ? 'bg-primary/20 text-primary shadow-[inset_4px_0_0_0_#E91E63]' : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'}`}>
-            <LayoutDashboard size={20} className={location.pathname === '/' ? 'text-primary' : ''} />
-            Dashboard
-          </Link>
-          <Link to="/users" className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${location.pathname === '/users' ? 'bg-primary/20 text-primary shadow-[inset_4px_0_0_0_#E91E63]' : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'}`}>
-            <Users size={20} className={location.pathname === '/users' ? 'text-primary' : ''} />
-            Users
-          </Link>
-          <Link to="/vendors" className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${location.pathname === '/vendors' ? 'bg-primary/20 text-primary shadow-[inset_4px_0_0_0_#E91E63]' : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'}`}>
-            <Store size={20} className={location.pathname === '/vendors' ? 'text-primary' : ''} />
-            Vendors
-          </Link>
-          <Link to="/orders" className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${location.pathname === '/orders' ? 'bg-primary/20 text-primary shadow-[inset_4px_0_0_0_#E91E63]' : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'}`}>
-            <ClipboardList size={20} className={location.pathname === '/orders' ? 'text-primary' : ''} />
-            Orders
-          </Link>
-          <Link to="/products" className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${location.pathname === '/products' ? 'bg-primary/20 text-primary shadow-[inset_4px_0_0_0_#E91E63]' : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'}`}>
-            <Package size={20} className={location.pathname === '/products' ? 'text-primary' : ''} />
-            Products
-          </Link>
-        </div>
-        
-        <div className="p-4 border-t border-gray-800/50 z-10 bg-gray-900/50 backdrop-blur-sm">
-          <button 
-            onClick={() => {
-              localStorage.removeItem('userInfo');
-              window.location.href = '/login';
-            }}
-            className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl font-medium text-gray-400 hover:text-white hover:bg-red-500/20 hover:text-red-400 w-full transition-all duration-300"
-          >
-            <LogOut size={18} />
-            Logout
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Header */}
-        <header className="h-20 bg-white shadow-sm border-b border-gray-100 flex items-center justify-between px-4 sm:px-10 z-10 sticky top-0">
-          <div className="flex items-center gap-4">
-            <Link to="/" className="flex-shrink-0 flex items-center">
-              <img src="/logo.png" alt="GoGirl Market" className="h-10 w-auto" />
-            </Link>
-            <div className="h-6 w-px bg-gray-200 hidden sm:block"></div>
-            <h2 className="text-xl font-heading font-extrabold text-gray-800 tracking-tight hidden sm:block">Admin Platform</h2>
-          </div>
-          
-          <div className="flex items-center gap-5 cursor-pointer hover:bg-surface/50 p-2 pr-4 rounded-full transition-all duration-300 border border-transparent hover:border-gray-200">
-            <div className="text-right">
-              <p className="font-semibold text-sm text-textPrimary leading-tight">{userInfo.name}</p>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Superadmin</p>
+    <div className="min-h-screen bg-background font-sans text-textPrimary flex flex-col pb-16 md:pb-0">
+      {/* Top Header Navigation */}
+      <header className="bg-surface/90 backdrop-blur-md sticky top-0 z-50 border-b border-borderLight transition-all">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+            {/* Logo */}
+            <div className="flex-shrink-0 flex items-center gap-3">
+              <img src="/logo.png" alt="GoGirl Market" className="h-10 sm:h-12 w-auto object-contain" />
+              <span className="hidden sm:inline-block pill-badge bg-softRose text-accent text-[10px] uppercase font-bold tracking-wider">
+                Admin Console
+              </span>
             </div>
-            <div className="h-11 w-11 bg-gradient-to-br from-primary to-secondary text-white rounded-full flex items-center justify-center font-bold shadow-lg uppercase text-sm border-2 border-white">
-              {userInfo.name.substring(0, 2)}
+
+            {/* Centered Navigation (Desktop) */}
+            <nav className="hidden md:flex items-center space-x-2 bg-background p-1.5 rounded-full border border-borderLight">
+              <Link to="/" className={`text-xs ${isActive('/')}`}>
+                <LayoutDashboard size={15} />
+                Dashboard
+              </Link>
+              <Link to="/users" className={`text-xs ${isActive('/users')}`}>
+                <Users size={15} />
+                Users
+              </Link>
+              <Link to="/vendors" className={`text-xs ${isActive('/vendors')}`}>
+                <Store size={15} />
+                Vendors
+              </Link>
+              <Link to="/orders" className={`text-xs ${isActive('/orders')}`}>
+                <ClipboardList size={15} />
+                Orders
+              </Link>
+              <Link to="/products" className={`text-xs ${isActive('/products')}`}>
+                <Package size={15} />
+                Products
+              </Link>
+            </nav>
+
+            {/* Profile & Logout */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-full bg-cream text-primary border border-borderLight flex items-center justify-center font-bold text-xs shadow-xs">
+                  {userInfo.name.substring(0, 2).toUpperCase()}
+                </div>
+                <div className="text-left hidden lg:block">
+                  <p className="font-bold text-xs text-primary leading-tight">{userInfo.name}</p>
+                  <p className="text-[10px] text-textMuted font-bold uppercase tracking-wider">Superadmin</p>
+                </div>
+              </div>
+              
+              <button 
+                onClick={() => {
+                  localStorage.removeItem('userInfo');
+                  window.location.href = '/login';
+                }}
+                className="p-2 text-textMuted hover:text-accent transition-colors rounded-full hover:bg-cream"
+                title="Logout"
+              >
+                <LogOut size={18} />
+              </button>
             </div>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-surface p-4 sm:p-8 pb-24 md:pb-8">
-          <Routes>
-            <Route path="/" element={<DashboardScreen />} />
-            <Route path="/users" element={<UsersScreen />} />
-            <Route path="/vendors" element={<VendorsScreen />} />
-            <Route path="/products" element={<ProductsScreen />} />
-            <Route path="/orders" element={<OrdersScreen />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
-      </div>
+      {/* Main Content Area */}
+      <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+        <Routes>
+          <Route path="/" element={<DashboardScreen />} />
+          <Route path="/users" element={<UsersScreen />} />
+          <Route path="/vendors" element={<VendorsScreen />} />
+          <Route path="/products" element={<ProductsScreen />} />
+          <Route path="/orders" element={<OrdersScreen />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900 text-white border-t border-gray-800 flex justify-around items-center h-16 z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.5)] pb-safe">
-        <Link to="/" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
-          <LayoutDashboard size={20} />
-          <span className="text-[10px] mt-1 font-bold tracking-wide">Dashboard</span>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-lg border-t border-borderLight flex justify-between items-center h-16 px-4 z-50 shadow-lg">
+        <Link to="/" className={`flex flex-col items-center justify-center gap-1 text-[10px] font-semibold ${location.pathname === '/' ? 'text-accent' : 'text-textMuted hover:text-accent'}`}>
+          <LayoutDashboard size={18} />
+          <span>Dashboard</span>
         </Link>
-        <Link to="/users" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/users' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
-          <Users size={20} />
-          <span className="text-[10px] mt-1 font-bold tracking-wide">Users</span>
+        <Link to="/users" className={`flex flex-col items-center justify-center gap-1 text-[10px] font-semibold ${location.pathname === '/users' ? 'text-accent' : 'text-textMuted hover:text-accent'}`}>
+          <Users size={18} />
+          <span>Users</span>
         </Link>
-        <Link to="/vendors" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/vendors' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
-          <Store size={20} />
-          <span className="text-[10px] mt-1 font-bold tracking-wide">Vendors</span>
+        <Link to="/vendors" className={`flex flex-col items-center justify-center gap-1 text-[10px] font-semibold ${location.pathname === '/vendors' ? 'text-accent' : 'text-textMuted hover:text-accent'}`}>
+          <Store size={18} />
+          <span>Vendors</span>
         </Link>
-        <Link to="/orders" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/orders' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
-          <ClipboardList size={20} />
-          <span className="text-[10px] mt-1 font-bold tracking-wide">Orders</span>
+        <Link to="/orders" className={`flex flex-col items-center justify-center gap-1 text-[10px] font-semibold ${location.pathname === '/orders' ? 'text-accent' : 'text-textMuted hover:text-accent'}`}>
+          <ClipboardList size={18} />
+          <span>Orders</span>
         </Link>
-        <Link to="/products" className={`flex flex-col items-center justify-center w-full h-full ${location.pathname === '/products' ? 'text-primary' : 'text-gray-400 hover:text-primary transition-colors'}`}>
-          <Package size={20} />
-          <span className="text-[10px] mt-1 font-bold tracking-wide">Products</span>
+        <Link to="/products" className={`flex flex-col items-center justify-center gap-1 text-[10px] font-semibold ${location.pathname === '/products' ? 'text-accent' : 'text-textMuted hover:text-accent'}`}>
+          <Package size={18} />
+          <span>Products</span>
         </Link>
       </nav>
     </div>

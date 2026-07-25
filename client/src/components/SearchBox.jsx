@@ -7,8 +7,11 @@ const SearchBox = () => {
 
   const submitHandler = (e) => {
     e.preventDefault();
-    if (keyword.trim()) {
-      navigate(`/shop?keyword=${keyword}`);
+    const term = keyword.trim();
+    if (term.toLowerCase() === 'shoes' || term.toLowerCase() === 'shoe') {
+      navigate('/shop?category=Shoes');
+    } else if (term) {
+      navigate(`/shop?keyword=${encodeURIComponent(term)}`);
     } else {
       navigate('/shop');
     }

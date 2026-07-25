@@ -41,124 +41,115 @@ const ProfileScreen = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+      {/* Profile Header Banner */}
+      <div className="bg-surface p-6 sm:p-8 rounded-3xl border border-borderLight flex flex-col sm:flex-row items-center gap-6 shadow-xs">
+        <div className="w-20 h-20 rounded-full bg-cream text-primary border-2 border-borderLight flex items-center justify-center font-bold text-2xl shadow-xs">
+          {name ? name.charAt(0).toUpperCase() : 'U'}
+        </div>
+        <div className="space-y-1 text-center sm:text-left">
+          <h1 className="text-2xl font-heading font-bold text-primary">{name || 'Customer Account'}</h1>
+          <p className="text-xs text-textMuted">{email}</p>
+          <span className="pill-badge bg-softRose text-accent text-[10px] uppercase font-bold tracking-wider">GoGirl Member</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* User Profile Form */}
-        <div className="md:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-fit">
-          <h2 className="text-2xl font-heading font-bold mb-6 text-textPrimary">User Profile</h2>
-          {message && <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-4" role="alert">{message}</div>}
-          {errorAuth && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">{errorAuth}</div>}
+        <div className="bg-surface p-6 rounded-3xl border border-borderLight shadow-xs h-fit space-y-4">
+          <h2 className="text-lg font-heading font-bold text-primary border-b border-borderLight pb-3">Account Details</h2>
+          {message && <div className="bg-emerald-50 text-emerald-700 p-3 rounded-xl text-xs border border-emerald-200">{message}</div>}
+          {errorAuth && <div className="bg-red-50 text-red-700 p-3 rounded-xl text-xs border border-red-200">{errorAuth}</div>}
           
           <form onSubmit={submitHandler} className="space-y-4">
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">Name</label>
+              <label className="block text-xs font-semibold text-textMuted mb-1">Full Name</label>
               <input
                 type="text"
-                className="w-full p-3 border rounded-md outline-none focus:border-primary"
+                className="w-full bg-background border border-borderLight text-xs p-3 rounded-xl outline-none focus:border-accent"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                required
               />
             </div>
+
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">Email Address</label>
+              <label className="block text-xs font-semibold text-textMuted mb-1">Email Address</label>
               <input
                 type="email"
-                className="w-full p-3 border rounded-md outline-none focus:border-primary"
+                className="w-full bg-background border border-borderLight text-xs p-3 rounded-xl outline-none focus:border-accent"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </div>
+
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">Password</label>
+              <label className="block text-xs font-semibold text-textMuted mb-1">New Password</label>
               <input
                 type="password"
-                className="w-full p-3 border rounded-md outline-none focus:border-primary"
+                className="w-full bg-background border border-borderLight text-xs p-3 rounded-xl outline-none focus:border-accent"
+                placeholder="Leave blank to keep current"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Leave blank to keep same"
               />
             </div>
+
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">Confirm Password</label>
+              <label className="block text-xs font-semibold text-textMuted mb-1">Confirm Password</label>
               <input
                 type="password"
-                className="w-full p-3 border rounded-md outline-none focus:border-primary"
+                className="w-full bg-background border border-borderLight text-xs p-3 rounded-xl outline-none focus:border-accent"
+                placeholder="Confirm new password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
             </div>
-            
-            <button 
-              type="submit" 
-              className="w-full btn-primary py-3"
-              disabled={loadingAuth}
-            >
-              {loadingAuth ? 'Updating...' : 'Update'}
+
+            <button type="submit" className="w-full btn-primary py-3 text-xs shadow-xs" disabled={loadingAuth}>
+              {loadingAuth ? 'Updating...' : 'Save Profile'}
             </button>
           </form>
         </div>
 
-        {/* Order History Table */}
-        <div className="md:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-2xl font-heading font-bold mb-6 text-textPrimary">My Orders</h2>
+        {/* Order History */}
+        <div className="lg:col-span-2 bg-surface p-6 rounded-3xl border border-borderLight shadow-xs space-y-4">
+          <h2 className="text-lg font-heading font-bold text-primary border-b border-borderLight pb-3">My Orders</h2>
           
           {loadingOrders ? (
-            <div className="flex justify-center py-8">
-               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-accent"></div>
             </div>
           ) : errorOrders ? (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">{errorOrders}</div>
-          ) : orders.length === 0 ? (
-            <p className="text-gray-600">You have no orders yet.</p>
+            <div className="bg-red-50 text-red-700 p-3 rounded-xl text-xs border border-red-200">{errorOrders}</div>
+          ) : !orders || orders.length === 0 ? (
+            <div className="bg-background p-8 rounded-2xl text-center space-y-2 border border-borderLight">
+              <span className="text-3xl">📦</span>
+              <p className="text-xs text-textMuted">You have not placed any orders yet.</p>
+              <Link to="/shop" className="btn-secondary py-2 px-5 text-xs inline-block mt-2">
+                Start Browsing
+              </Link>
+            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paid</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivered</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {orders.map((order) => (
-                    <tr key={order._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <Link to={`/order/${order._id}`} className="text-primary hover:underline font-bold">
-                          {order._id.substring(0, 8)}...
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.createdAt.substring(0, 10)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">UGX {order.totalPrice.toLocaleString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {order.isPaid ? (
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            {order.paidAt.substring(0, 10)}
-                          </span>
-                        ) : (
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                            No
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {order.isDelivered ? (
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            {order.deliveredAt.substring(0, 10)}
-                          </span>
-                        ) : (
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                            Pending
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-3">
+              {orders.map((order) => (
+                <div key={order._id} className="bg-background p-4 rounded-2xl border border-borderLight flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div>
+                    <p className="text-xs font-bold text-primary">Order #{order._id.substring(0, 10)}</p>
+                    <p className="text-[11px] text-textMuted">{order.createdAt.substring(0, 10)} • UGX {order.totalPrice?.toLocaleString()}</p>
+                  </div>
+                  <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                    {order.isPaid ? (
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">Paid</span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">Pending</span>
+                    )}
+                    <Link to={`/order/${order._id}`} className="btn-secondary py-1.5 px-3 text-xs">
+                      View Details
+                    </Link>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
