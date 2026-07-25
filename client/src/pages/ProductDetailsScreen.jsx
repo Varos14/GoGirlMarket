@@ -48,7 +48,6 @@ const ProductDetailsScreen = () => {
       vendor: typeof product.vendor === 'object' ? product.vendor._id : product.vendor,
       qty: Number(qty)
     }));
-    navigate('/cart');
   };
 
   const [selectedImage, setSelectedImage] = useState(0);

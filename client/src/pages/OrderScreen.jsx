@@ -380,8 +380,10 @@ const OrderScreen = () => {
                   
                   // Construct WhatsApp pre-filled message
                   const itemsList = vendorOrder.items?.map(i => `${i.qty}x ${i.name}`).join(', ');
+                  const customerName = order.user?.name || 'Customer';
+                  const addressStr = order.shippingAddress?.address ? `${order.shippingAddress.address}, ${order.shippingAddress.city || ''}` : 'My registered address';
                   const waMessage = encodeURIComponent(
-                    `Hello ${storeTitle}! I have paid for Order #${order._id.substring(18)} (${itemsList}). I would like to arrange delivery details and fee with you.`
+                    `Hello ${storeTitle}! My name is ${customerName}. I have paid for Order #${order._id.substring(18)} (${itemsList}). Delivery Address: ${addressStr}. I would like to confirm delivery arrangements & fee.`
                   );
                   const whatsappUrl = vendorPhone 
                     ? `https://wa.me/${vendorPhone}?text=${waMessage}` 

@@ -206,7 +206,7 @@ const updateOrderToPaid = async (req, res) => {
         html: `<h1>Payment Successful!</h1><p>We received your payment of UGX ${updatedOrder.totalPrice}. The vendor(s) have been notified and your items will be shipped soon.</p>`
       });
 
-      // Async send notification emails to all unique vendors
+      // Async send notification emails and WhatsApp alerts to all unique vendors
       try {
         const vendorIds = [...new Set(updatedOrder.orderItems.map(item => item.product?.vendor?.toString()).filter(Boolean))];
         const vendors = await User.find({ _id: { $in: vendorIds } });
@@ -223,12 +223,19 @@ const updateOrderToPaid = async (req, res) => {
               <p><strong>Email:</strong> ${order.user.email}</p>
               <p><strong>Delivery Address:</strong> ${order.shippingAddress.address}, ${order.shippingAddress.city}</p>
               <br/>
-              <p>Please log into your Vendor Dashboard to prepare this order for dispatch!</p>
+              <p>Please log into your Vendor Dashboard to prepare this order for dispatch and coordinate delivery!</p>
             `
           });
+
+          if (vendor.phone && typeof sendWhatsAppMessage === 'function') {
+            sendWhatsAppMessage(
+              vendor.phone,
+              `🎉 New Paid Order Received! Customer ${order.user.name} paid for Order #${updatedOrder._id.toString().substring(18)}. Delivery Address: ${order.shippingAddress.address}, ${order.shippingAddress.city}. Please check your Vendor Dashboard!`
+            ).catch(err => console.error("WhatsApp send error:", err.message));
+          }
         });
       } catch (err) {
-        console.error("Error sending vendor emails:", err);
+        console.error("Error sending vendor notifications:", err);
       }
 
       res.json(updatedOrder);

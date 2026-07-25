@@ -20,7 +20,9 @@ import WishlistScreen from './pages/WishlistScreen';
 import Footer from './components/Footer';
 import SearchBox from './components/SearchBox';
 import ChatbotWidget from './components/ChatbotWidget';
+import CartDrawer from './components/CartDrawer';
 import { logout } from './store/authSlice';
+import { openCartDrawer } from './store/cartSlice';
 
 function App() {
   const cartItems = useSelector((state) => state.cart.cartItems);
@@ -101,8 +103,12 @@ function App() {
               </svg>
             </Link>
 
-            {/* Cart */}
-            <Link to="/cart" className="p-2 text-textPrimary hover:text-accent transition-colors relative rounded-full hover:bg-cream">
+            {/* Cart Button */}
+            <button 
+              onClick={() => dispatch(openCartDrawer())} 
+              className="p-2 text-textPrimary hover:text-accent transition-colors relative rounded-full hover:bg-cream"
+              aria-label="Open Cart"
+            >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
@@ -111,7 +117,7 @@ function App() {
                   {cartCount}
                 </span>
               )}
-            </Link>
+            </button>
 
             {/* Auth / Profile */}
             {userInfo ? (
@@ -186,7 +192,10 @@ function App() {
           <span className="text-[10px] font-semibold">Wishlist</span>
         </Link>
 
-        <Link to="/cart" className="flex flex-col items-center gap-1 text-textMuted hover:text-accent focus:text-accent transition-colors relative">
+        <button 
+          onClick={() => dispatch(openCartDrawer())}
+          className="flex flex-col items-center gap-1 text-textMuted hover:text-accent focus:text-accent transition-colors relative"
+        >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
           </svg>
@@ -196,7 +205,7 @@ function App() {
             </span>
           )}
           <span className="text-[10px] font-semibold">Cart</span>
-        </Link>
+        </button>
 
         <Link to={userInfo ? "/profile" : "/login"} className="flex flex-col items-center gap-1 text-textMuted hover:text-accent focus:text-accent transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -207,6 +216,7 @@ function App() {
       </nav>
 
       <Footer />
+      <CartDrawer />
       <ChatbotWidget />
     </div>
   );
