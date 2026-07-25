@@ -178,6 +178,59 @@ const getOrderById = async (req, res) => {
   }
 };
 
+/**
+ * Helper to dispatch multi-channel vendor notifications (Email + WhatsApp)
+ */
+const notifyVendorsForPaidOrder = async (order) => {
+  try {
+    const vendorIds = [...new Set((order.orderItems || []).map(item => item.product?.vendor?.toString()).filter(Boolean))];
+    if (vendorIds.length === 0) return;
+    
+    const vendors = await User.find({ _id: { $in: vendorIds } });
+
+    for (const vendor of vendors) {
+      // 1. Email Notification
+      if (vendor.email) {
+        sendEmail({
+          to: vendor.email,
+          subject: `🎉 New Order Received! Action Required - #${order._id}`,
+          html: `
+            <h1>You have a new paid order!</h1>
+            <p>Great news! A customer just placed and paid for an order containing your products.</p>
+            <h3>Customer Details:</h3>
+            <p><strong>Name:</strong> ${order.user?.name || 'Customer'}</p>
+            <p><strong>Email:</strong> ${order.user?.email || 'N/A'}</p>
+            <p><strong>Delivery Address:</strong> ${order.shippingAddress?.address || ''}, ${order.shippingAddress?.city || ''}</p>
+            <br/>
+            <p>Please log into your Vendor Dashboard to prepare this order for dispatch and coordinate delivery!</p>
+          `
+        });
+      }
+
+      // 2. Automated WhatsApp Notification
+      if (vendor.phone && typeof sendWhatsAppMessage === 'function') {
+        let phone = vendor.phone.replace(/[^\d+]/g, '');
+        if (phone.startsWith('0')) {
+          phone = '+256' + phone.substring(1);
+        } else if (!phone.startsWith('+')) {
+          phone = '+' + phone;
+        }
+
+        const customerName = order.user?.name || 'Customer';
+        const shortId = order._id.toString().substring(18);
+        const addressStr = order.shippingAddress?.address ? `${order.shippingAddress.address}, ${order.shippingAddress.city || ''}` : 'Customer Address';
+
+        sendWhatsAppMessage({
+          to: phone,
+          message: `🎉 New Paid Order Received!\nCustomer: ${customerName}\nOrder ID: #${shortId}\nDelivery Address: ${addressStr}\nPlease check your Vendor Dashboard to prepare this order and arrange delivery!`
+        }).catch(err => console.error("WhatsApp send error:", err.message));
+      }
+    }
+  } catch (err) {
+    console.error("Error sending vendor notifications:", err.message);
+  }
+};
+
 // @desc    Update order to paid
 // @route   PUT /api/orders/:id/pay
 // @access  Private
@@ -189,7 +242,7 @@ const updateOrderToPaid = async (req, res) => {
       order.isPaid = true;
       order.paidAt = Date.now();
       
-      // Store payment result from Stripe
+      // Store payment result from Stripe / Pesapal
       order.paymentResult = {
         id: req.body.id,
         status: req.body.status,
@@ -200,54 +253,16 @@ const updateOrderToPaid = async (req, res) => {
       const updatedOrder = await order.save();
       
       // Async send payment email to customer
-      sendEmail({
-        to: order.user.email, // Populated from getOrderById where this is called
-        subject: `Payment Confirmed - Order ${updatedOrder._id}`,
-        html: `<h1>Payment Successful!</h1><p>We received your payment of UGX ${updatedOrder.totalPrice}. The vendor(s) have been notified and your items will be shipped soon.</p>`
-      });
+      if (order.user?.email) {
+        sendEmail({
+          to: order.user.email,
+          subject: `Payment Confirmed - Order ${updatedOrder._id}`,
+          html: `<h1>Payment Successful!</h1><p>We received your payment of UGX ${updatedOrder.totalPrice}. The vendor(s) have been notified and your items will be shipped soon.</p>`
+        });
+      }
 
       // Async send notification emails and WhatsApp alerts to all unique vendors
-      try {
-        const vendorIds = [...new Set(updatedOrder.orderItems.map(item => item.product?.vendor?.toString()).filter(Boolean))];
-        const vendors = await User.find({ _id: { $in: vendorIds } });
-        
-        vendors.forEach(vendor => {
-          sendEmail({
-            to: vendor.email,
-            subject: `🎉 New Order Received! Action Required - ${updatedOrder._id}`,
-            html: `
-              <h1>You have a new paid order!</h1>
-              <p>Great news! A customer just placed and paid for an order containing your products.</p>
-              <h3>Customer Details:</h3>
-              <p><strong>Name:</strong> ${order.user?.name || 'Customer'}</p>
-              <p><strong>Email:</strong> ${order.user?.email || 'N/A'}</p>
-              <p><strong>Delivery Address:</strong> ${order.shippingAddress?.address || ''}, ${order.shippingAddress?.city || ''}</p>
-              <br/>
-              <p>Please log into your Vendor Dashboard to prepare this order for dispatch and coordinate delivery!</p>
-            `
-          });
-
-          if (vendor.phone && typeof sendWhatsAppMessage === 'function') {
-            let phone = vendor.phone.replace(/[^\d+]/g, '');
-            if (phone.startsWith('0')) {
-              phone = '+256' + phone.substring(1);
-            } else if (!phone.startsWith('+')) {
-              phone = '+' + phone;
-            }
-
-            const customerName = order.user?.name || 'Customer';
-            const shortId = updatedOrder._id.toString().substring(18);
-            const addressStr = order.shippingAddress?.address ? `${order.shippingAddress.address}, ${order.shippingAddress.city || ''}` : 'Customer Address';
-
-            sendWhatsAppMessage({
-              to: phone,
-              message: `🎉 New Paid Order Received!\nCustomer: ${customerName}\nOrder ID: #${shortId}\nDelivery Address: ${addressStr}\nPlease check your Vendor Dashboard to prepare this order and arrange delivery!`
-            }).catch(err => console.error("WhatsApp send error:", err.message));
-          }
-        });
-      } catch (err) {
-        console.error("Error sending vendor notifications:", err);
-      }
+      notifyVendorsForPaidOrder(updatedOrder);
 
       res.json(updatedOrder);
     } else {
@@ -704,12 +719,17 @@ const handlePesapalIPN = async (req, res) => {
 
         await order.save();
 
-        // Send confirmation email
-        sendEmail({
-          to: order.user.email,
-          subject: `Payment Confirmed - Order ${order._id}`,
-          html: `<h1>Payment Successful!</h1><p>We received your Pesapal payment of ${statusData.currency || 'UGX'} ${order.totalPrice}. Your items will be shipped soon.</p>`
-        });
+        // Send confirmation email to customer
+        if (order.user?.email) {
+          sendEmail({
+            to: order.user.email,
+            subject: `Payment Confirmed - Order ${order._id}`,
+            html: `<h1>Payment Successful!</h1><p>We received your Pesapal payment of ${statusData.currency || 'UGX'} ${order.totalPrice}. Your items will be shipped soon.</p>`
+          });
+        }
+
+        // Send Email & WhatsApp notifications to vendors
+        notifyVendorsForPaidOrder(order);
       }
     }
 
