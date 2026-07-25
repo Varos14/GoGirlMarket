@@ -29,9 +29,9 @@ const addOrderItems = async (req, res) => {
         res.status(400).json({ message: 'No order items' });
         return;
       } else {
-        // 1. Fetch products to get vendor IDs
+        // 1. Fetch products and populate vendor details to resolve exact vendor email & phone
         const productIds = orderItems.map((item) => item.product);
-        const productsFromDb = await Product.find({ _id: { $in: productIds } });
+        const productsFromDb = await Product.find({ _id: { $in: productIds } }).populate('vendor', 'name storeName email phone');
 
         // 2. Group items by vendor
         const vendorGroups = {};
@@ -42,10 +42,15 @@ const addOrderItems = async (req, res) => {
             return res.status(404).json({ message: `Product not found: ${item.product}` });
           }
           
-          const vendorId = productFromDb.vendor.toString();
+          const vendorDoc = productFromDb.vendor;
+          const vendorId = vendorDoc?._id ? vendorDoc._id.toString() : productFromDb.vendor.toString();
+          
           if (!vendorGroups[vendorId]) {
             vendorGroups[vendorId] = {
               vendor: vendorId,
+              vendorEmail: vendorDoc?.email || '',
+              vendorStoreName: vendorDoc?.storeName || vendorDoc?.name || 'Vendor Store',
+              vendorPhone: vendorDoc?.phone || '',
               items: [],
               shippingPrice: 0, // Shipping is paid off-platform on delivery
               discountAmount: 0,
@@ -148,22 +153,28 @@ const addOrderItems = async (req, res) => {
       // Async notifications via utility for customer
       notifications.sendOrderPlaced(req.user, createdOrder);
 
-      // Async immediate email notification to each vendor in the order
+      // Async immediate email notification sent to each vendor's respective email address
       try {
-        const vendorIds = Object.keys(vendorGroups);
-        const vendors = await User.find({ _id: { $in: vendorIds } });
+        Object.values(vendorGroups).forEach(async (vGroup) => {
+          let targetEmail = vGroup.vendorEmail;
 
-        vendors.forEach(vendor => {
-          if (vendor.email) {
-            const vGroup = vendorGroups[vendor._id.toString()];
-            const itemsList = vGroup ? vGroup.items.map(i => `${i.qty}x ${i.name} (UGX ${(i.price * i.qty).toLocaleString()})`).join('<br/>') : '';
+          // If vendorEmail wasn't populated on product, fetch user
+          if (!targetEmail && vGroup.vendor) {
+            const vendorUser = await User.findById(vGroup.vendor);
+            targetEmail = vendorUser?.email;
+          }
+
+          if (targetEmail) {
+            const itemsList = vGroup.items.map(i => `• ${i.qty}x ${i.name} — UGX ${(i.price * i.qty).toLocaleString()}`).join('<br/>');
+
+            console.log(`[Order Placed Email] Dispatching receipt email to vendor address: ${targetEmail}`);
 
             sendEmail({
-              to: vendor.email,
-              subject: `🛒 New Order Placed! Action Required - #${createdOrder._id.toString().substring(18)}`,
+              to: targetEmail,
+              subject: `🛒 New Order Received! Action Required - #${createdOrder._id.toString().substring(18)}`,
               html: `
-                <h1>New Order Received!</h1>
-                <p>Hi <strong>${vendor.storeName || vendor.name}</strong>,</p>
+                <h1>New Order Notification</h1>
+                <p>Hi <strong>${vGroup.vendorStoreName}</strong>,</p>
                 <p>A customer has just placed a new order containing your products on GoGirl Market!</p>
                 
                 <h3>Order Summary:</h3>
@@ -173,13 +184,15 @@ const addOrderItems = async (req, res) => {
                 <p><strong>Payment Method:</strong> ${createdOrder.paymentMethod}</p>
                 <p><strong>Delivery Address:</strong> ${createdOrder.shippingAddress?.address || ''}, ${createdOrder.shippingAddress?.city || ''}</p>
                 
-                <h3>Items ordered from your store:</h3>
+                <h3>Items Ordered From Your Store:</h3>
                 <p>${itemsList}</p>
                 
                 <br/>
-                <p>Please log into your Vendor Dashboard to monitor payment status and prepare for delivery.</p>
+                <p>Please log into your Vendor Dashboard to monitor payment status and coordinate delivery.</p>
               `
             });
+          } else {
+            console.warn(`[Order Placed Email] Could not find vendor email for vendor ID: ${vGroup.vendor}`);
           }
         });
       } catch (vendorErr) {
@@ -221,7 +234,11 @@ const getOrderById = async (req, res) => {
  */
 const notifyVendorsForPaidOrder = async (order) => {
   try {
-    const vendorIds = [...new Set((order.orderItems || []).map(item => item.product?.vendor?.toString()).filter(Boolean))];
+    const vendorIds = [...new Set([
+      ...(order.orderItems || []).map(i => i.vendor?.toString() || i.product?.vendor?.toString()),
+      ...(order.vendorOrders || []).map(vo => vo.vendor?._id ? vo.vendor._id.toString() : vo.vendor?.toString())
+    ].filter(Boolean))];
+
     if (vendorIds.length === 0) return;
     
     const vendors = await User.find({ _id: { $in: vendorIds } });

@@ -1,31 +1,48 @@
 const nodemailer = require('nodemailer');
 
 const sendEmail = async ({ to, subject, html }) => {
+  if (!to) {
+    console.warn('sendEmail skipped: No recipient email address provided.');
+    return;
+  }
+
+  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!user || !pass) {
+    console.warn(`[Mock Email] To: ${to} | Subject: ${subject} (SMTP_USER or SMTP_PASS not set)`);
+    return;
+  }
+
   try {
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      secure: false, // true for 465, false for other ports
+      host,
+      port,
+      secure: port === 465,
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+        user,
+        pass,
+      },
+      tls: {
+        rejectUnauthorized: false,
       },
     });
 
     const mailOptions = {
-      from: `"GoGirl Market" <${process.env.SMTP_USER}>`,
+      from: `"GoGirl Market" <${user}>`,
       to,
       subject,
       html,
     };
 
+    console.log(`[Email] Sending email to ${to}...`);
     const info = await transporter.sendMail(mailOptions);
-    console.log('Message sent: %s', info.messageId);
+    console.log(`[Email] Message successfully sent to ${to}: ${info.messageId}`);
     return info;
   } catch (error) {
-    console.error(`Error sending email: ${error.message}`);
-    // We don't want the app to crash if email fails, so we just log it
-    // In production, we'd use a retry queue or a third-party service library
+    console.error(`[Email Error] Failed to send email to ${to}:`, error.message);
   }
 };
 
