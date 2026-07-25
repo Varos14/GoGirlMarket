@@ -145,8 +145,46 @@ const addOrderItems = async (req, res) => {
         recordCouponUsage(record.couponId, record.userId, record.discountAmount);
       }
       
-      // Async notifications via utility
+      // Async notifications via utility for customer
       notifications.sendOrderPlaced(req.user, createdOrder);
+
+      // Async immediate email notification to each vendor in the order
+      try {
+        const vendorIds = Object.keys(vendorGroups);
+        const vendors = await User.find({ _id: { $in: vendorIds } });
+
+        vendors.forEach(vendor => {
+          if (vendor.email) {
+            const vGroup = vendorGroups[vendor._id.toString()];
+            const itemsList = vGroup ? vGroup.items.map(i => `${i.qty}x ${i.name} (UGX ${(i.price * i.qty).toLocaleString()})`).join('<br/>') : '';
+
+            sendEmail({
+              to: vendor.email,
+              subject: `🛒 New Order Placed! Action Required - #${createdOrder._id.toString().substring(18)}`,
+              html: `
+                <h1>New Order Received!</h1>
+                <p>Hi <strong>${vendor.storeName || vendor.name}</strong>,</p>
+                <p>A customer has just placed a new order containing your products on GoGirl Market!</p>
+                
+                <h3>Order Summary:</h3>
+                <p><strong>Order ID:</strong> #${createdOrder._id}</p>
+                <p><strong>Customer Name:</strong> ${req.user.name}</p>
+                <p><strong>Customer Email:</strong> ${req.user.email}</p>
+                <p><strong>Payment Method:</strong> ${createdOrder.paymentMethod}</p>
+                <p><strong>Delivery Address:</strong> ${createdOrder.shippingAddress?.address || ''}, ${createdOrder.shippingAddress?.city || ''}</p>
+                
+                <h3>Items ordered from your store:</h3>
+                <p>${itemsList}</p>
+                
+                <br/>
+                <p>Please log into your Vendor Dashboard to monitor payment status and prepare for delivery.</p>
+              `
+            });
+          }
+        });
+      } catch (vendorErr) {
+        console.error("Error sending immediate vendor order placed emails:", vendorErr.message);
+      }
 
       res.status(201).json(createdOrder);
     }
