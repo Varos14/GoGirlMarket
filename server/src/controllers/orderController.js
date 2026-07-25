@@ -219,19 +219,30 @@ const updateOrderToPaid = async (req, res) => {
               <h1>You have a new paid order!</h1>
               <p>Great news! A customer just placed and paid for an order containing your products.</p>
               <h3>Customer Details:</h3>
-              <p><strong>Name:</strong> ${order.user.name}</p>
-              <p><strong>Email:</strong> ${order.user.email}</p>
-              <p><strong>Delivery Address:</strong> ${order.shippingAddress.address}, ${order.shippingAddress.city}</p>
+              <p><strong>Name:</strong> ${order.user?.name || 'Customer'}</p>
+              <p><strong>Email:</strong> ${order.user?.email || 'N/A'}</p>
+              <p><strong>Delivery Address:</strong> ${order.shippingAddress?.address || ''}, ${order.shippingAddress?.city || ''}</p>
               <br/>
               <p>Please log into your Vendor Dashboard to prepare this order for dispatch and coordinate delivery!</p>
             `
           });
 
           if (vendor.phone && typeof sendWhatsAppMessage === 'function') {
-            sendWhatsAppMessage(
-              vendor.phone,
-              `🎉 New Paid Order Received! Customer ${order.user.name} paid for Order #${updatedOrder._id.toString().substring(18)}. Delivery Address: ${order.shippingAddress.address}, ${order.shippingAddress.city}. Please check your Vendor Dashboard!`
-            ).catch(err => console.error("WhatsApp send error:", err.message));
+            let phone = vendor.phone.replace(/[^\d+]/g, '');
+            if (phone.startsWith('0')) {
+              phone = '+256' + phone.substring(1);
+            } else if (!phone.startsWith('+')) {
+              phone = '+' + phone;
+            }
+
+            const customerName = order.user?.name || 'Customer';
+            const shortId = updatedOrder._id.toString().substring(18);
+            const addressStr = order.shippingAddress?.address ? `${order.shippingAddress.address}, ${order.shippingAddress.city || ''}` : 'Customer Address';
+
+            sendWhatsAppMessage({
+              to: phone,
+              message: `🎉 New Paid Order Received!\nCustomer: ${customerName}\nOrder ID: #${shortId}\nDelivery Address: ${addressStr}\nPlease check your Vendor Dashboard to prepare this order and arrange delivery!`
+            }).catch(err => console.error("WhatsApp send error:", err.message));
           }
         });
       } catch (err) {
