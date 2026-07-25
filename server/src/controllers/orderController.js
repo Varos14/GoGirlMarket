@@ -234,6 +234,11 @@ const getOrderById = async (req, res) => {
  */
 const notifyVendorsForPaidOrder = async (order) => {
   try {
+    // Populate user if not populated
+    if (!order.user || !order.user.name) {
+      await order.populate('user', 'name email phone');
+    }
+
     const vendorIds = [...new Set([
       ...(order.orderItems || []).map(i => i.vendor?.toString() || i.product?.vendor?.toString()),
       ...(order.vendorOrders || []).map(vo => vo.vendor?._id ? vo.vendor._id.toString() : vo.vendor?.toString())
@@ -244,23 +249,43 @@ const notifyVendorsForPaidOrder = async (order) => {
     const vendors = await User.find({ _id: { $in: vendorIds } });
 
     for (const vendor of vendors) {
-      // 1. Email Notification
-      if (vendor.email) {
-        sendEmail({
-          to: vendor.email,
-          subject: `🎉 New Order Received! Action Required - #${order._id}`,
-          html: `
-            <h1>You have a new paid order!</h1>
-            <p>Great news! A customer just placed and paid for an order containing your products.</p>
-            <h3>Customer Details:</h3>
-            <p><strong>Name:</strong> ${order.user?.name || 'Customer'}</p>
-            <p><strong>Email:</strong> ${order.user?.email || 'N/A'}</p>
-            <p><strong>Delivery Address:</strong> ${order.shippingAddress?.address || ''}, ${order.shippingAddress?.city || ''}</p>
-            <br/>
-            <p>Please log into your Vendor Dashboard to prepare this order for dispatch and coordinate delivery!</p>
-          `
-        });
+      if (!vendor.email) {
+        console.warn(`[Vendor Notification] Vendor ${vendor.storeName || vendor.name} has no email address configured.`);
+        continue;
       }
+
+      // Find items for this vendor
+      const vendorPackage = (order.vendorOrders || []).find(vo => 
+        vo.vendor?._id ? vo.vendor._id.toString() === vendor._id.toString() : vo.vendor?.toString() === vendor._id.toString()
+      );
+      const vendorItems = vendorPackage ? vendorPackage.items : (order.orderItems || []).filter(i => 
+        (i.vendor?.toString() || i.product?.vendor?.toString()) === vendor._id.toString()
+      );
+
+      const itemsListHtml = (vendorItems || []).map(i => `• ${i.qty}x ${i.name} — UGX ${(i.price * i.qty).toLocaleString()}`).join('<br/>') || 'Your order items';
+
+      console.log(`[Order Paid Email] Dispatching paid receipt to vendor email: ${vendor.email}`);
+
+      // 1. Email Notification
+      sendEmail({
+        to: vendor.email,
+        subject: `🎉 Payment Confirmed - Order #${order._id.toString().substring(18)}`,
+        html: `
+          <h1>Payment Confirmed!</h1>
+          <p>Hi <strong>${vendor.storeName || vendor.name}</strong>,</p>
+          <p>Great news! A customer's payment has been confirmed for an order containing your products.</p>
+          
+          <h3>Customer Details:</h3>
+          <p><strong>Name:</strong> ${order.user?.name || 'Customer'}</p>
+          <p><strong>Email:</strong> ${order.user?.email || 'N/A'}</p>
+          <p><strong>Delivery Address:</strong> ${order.shippingAddress?.address || ''}, ${order.shippingAddress?.city || ''}</p>
+          
+          <h3>Paid Items From Your Store:</h3>
+          <p>${itemsListHtml}</p>
+          <br/>
+          <p>Please log into your Vendor Dashboard to prepare this order for dispatch and coordinate delivery!</p>
+        `
+      });
 
       // 2. Automated WhatsApp Notification
       if (vendor.phone && typeof sendWhatsAppMessage === 'function') {
