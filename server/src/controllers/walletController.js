@@ -143,6 +143,111 @@ const executeBulkPayout = async (req, res) => {
   }
 };
 
+// @desc    Initiate Wallet Top-Up via Pesapal
+// @route   POST /api/wallet/topup
+// @access  Private
+const topUpWallet = async (req, res) => {
+  try {
+    const { amount } = req.body;
+    if (!amount || amount < 1000) return res.status(400).json({ message: 'Minimum top-up is UGX 1000' });
+
+    const pesapalUtils = require('../utils/pesapalUtils');
+    
+    // Auto-register IPN for top-ups if needed
+    let ipnId = process.env.PESAPAL_TOPUP_IPN_ID;
+    if (!ipnId) {
+      try {
+        const backendDomain = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+        const ipnRes = await pesapalUtils.registerPesapalIPN(`${backendDomain}/api/wallet/topup-ipn`);
+        ipnId = ipnRes?.ipn_id;
+      } catch (e) {
+        console.warn('IPN registration failed, proceeding anyway:', e.message);
+      }
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const callbackUrl = `${frontendUrl}/wallet`;
+
+    const nameParts = (req.user.name || 'User').split(' ');
+    
+    // Create a pending transaction for the top-up
+    const tx = await Transaction.create({
+      user: req.user._id,
+      type: 'wallet_topup',
+      amount: amount,
+      status: 'pending',
+      description: 'Wallet Top-Up via Pesapal'
+    });
+
+    const pesapalPayload = {
+      id: `${tx._id}`, // Using Transaction ID as reference
+      currency: 'UGX',
+      amount: amount,
+      description: `Wallet Top-Up for ${req.user.name}`,
+      callback_url: callbackUrl,
+      notification_id: ipnId || '',
+      billing_address: {
+        email_address: req.user.email || 'user@example.com',
+        phone_number: req.user.phone || '',
+        country_code: 'UG',
+        first_name: nameParts[0] || 'User',
+        middle_name: '',
+        last_name: nameParts.slice(1).join(' ') || 'User',
+        line_1: '', line_2: '', city: '', state: '', postal_code: '', zip_code: ''
+      }
+    };
+
+    const pesapalResponse = await pesapalUtils.createPesapalOrder(pesapalPayload);
+
+    if (pesapalResponse && pesapalResponse.redirect_url) {
+      res.json({ redirect_url: pesapalResponse.redirect_url });
+    } else {
+      res.status(400).json({ message: 'Failed to generate Pesapal payment link' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Server Error' });
+  }
+};
+
+// @desc    Handle Pesapal IPN for Top-Up
+// @route   GET /api/wallet/topup-ipn or POST /api/wallet/topup-ipn
+// @access  Public
+const handleTopUpIPN = async (req, res) => {
+  try {
+    const pesapalUtils = require('../utils/pesapalUtils');
+    const orderTrackingId = req.query.OrderTrackingId || req.body.OrderTrackingId;
+    const merchantReference = req.query.OrderMerchantReference || req.body.OrderMerchantReference; // Transaction ID
+
+    if (!orderTrackingId || !merchantReference) {
+      return res.status(400).json({ message: 'Missing parameters' });
+    }
+
+    const statusData = await pesapalUtils.getPesapalTransactionStatus(orderTrackingId);
+    
+    if (statusData.payment_status_description === 'Completed') {
+      const tx = await Transaction.findById(merchantReference);
+      
+      if (tx && tx.status !== 'completed') {
+        tx.status = 'completed';
+        await tx.save();
+
+        const user = await User.findById(tx.user);
+        if (user) {
+          if (!user.wallet) user.wallet = { pendingBalance: 0, availableBalance: 0 };
+          user.wallet.availableBalance += tx.amount;
+          await user.save();
+          console.log(`[WALLET TOPUP] Added UGX ${tx.amount} to ${user.name}`);
+        }
+      }
+    }
+    
+    res.json({ status: 200, message: "IPN Received" });
+  } catch (error) {
+    console.error('Pesapal IPN Error:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
 module.exports = {
   getWalletDetails,
   topUpWallet,
