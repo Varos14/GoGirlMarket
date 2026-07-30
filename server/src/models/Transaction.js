@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const transactionSchema = new mongoose.Schema({
-  vendor: {
+  user: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'User',
@@ -13,7 +13,7 @@ const transactionSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['credit_pending', 'cleared', 'withdrawal', 'refund'],
+    enum: ['credit_pending', 'cleared', 'withdrawal_request', 'wallet_topup', 'refund'],
     required: true,
   },
   amount: {

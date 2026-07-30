@@ -16,6 +16,7 @@ const {
   cancelOrder,
   raiseOrderDispute,
   resolveOrderDispute,
+  getDisputedOrders,
 } = require('../controllers/orderController');
 const { protect, admin, vendor } = require('../middleware/authMiddleware');
 
@@ -40,6 +41,7 @@ router.put('/:id/cancel', protect, cancelOrder);
 router.put('/:id/status', protect, updateOrderStatus);
 router.post('/:id/dispute', protect, raiseOrderDispute);
 router.put('/:id/dispute/resolve', protect, admin, resolveOrderDispute);
+router.get('/disputes/all', protect, admin, getDisputedOrders);
 
 module.exports = router;
 

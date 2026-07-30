@@ -21,7 +21,7 @@ const getWalletDetails = async (req, res) => {
     // 1. DYNAMIC CLEARING
     // Find all 'credit_pending' transactions past their clearance date
     const matureTransactions = await Transaction.find({
-      vendor: vendorId,
+      user: vendorId,
       type: 'credit_pending',
       status: 'pending',
       clearanceDate: { $lte: new Date() }
@@ -39,7 +39,7 @@ const getWalletDetails = async (req, res) => {
 
         // Optionally, create a new 'cleared' transaction for the ledger to be explicit
         await Transaction.create({
-          vendor: vendorId,
+          user: vendorId,
           order: tx.order,
           type: 'cleared',
           amount: tx.amount,
@@ -59,7 +59,7 @@ const getWalletDetails = async (req, res) => {
     }
 
     // 2. Fetch all transactions for the ledger statement
-    const transactions = await Transaction.find({ vendor: vendorId }).sort({ createdAt: -1 });
+    const transactions = await Transaction.find({ user: vendorId }).sort({ createdAt: -1 });
 
     res.json({
       wallet: vendor.wallet,
@@ -127,11 +127,11 @@ const requestWithdrawal = async (req, res) => {
 
     // 3. Create withdrawal transaction
     const withdrawalTx = await Transaction.create({
-      vendor: vendorId,
-      type: 'withdrawal',
+      user: vendorId,
+      type: 'withdrawal_request',
       amount: amount,
-      status: 'completed', // Transfer initiated successfully
-      description: `Withdrawal via Flutterwave to ${bankToUse} (${numberToUse})`
+      status: 'pending', // Pending Admin Approval
+      description: `Withdrawal Request to ${bankToUse} (${numberToUse})`
     });
 
     console.log(`[WALLET] Withdrawal processed for UGX ${amount} by ${vendor.name}`);
@@ -148,7 +148,165 @@ const requestWithdrawal = async (req, res) => {
   }
 };
 
+// @desc    Initiate Wallet Top-Up via Pesapal
+// @route   POST /api/wallet/topup
+// @access  Private
+const topUpWallet = async (req, res) => {
+  try {
+    const { amount } = req.body;
+    if (!amount || amount < 1000) return res.status(400).json({ message: 'Minimum top-up is UGX 1000' });
+
+    const pesapalUtils = require('../utils/pesapalUtils');
+    
+    // Auto-register IPN for top-ups if needed
+    let ipnId = process.env.PESAPAL_TOPUP_IPN_ID;
+    if (!ipnId) {
+      try {
+        const backendDomain = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+        const ipnRes = await pesapalUtils.registerPesapalIPN(`${backendDomain}/api/wallet/topup-ipn`);
+        ipnId = ipnRes?.ipn_id;
+      } catch (e) {
+        console.warn('IPN registration failed, proceeding anyway:', e.message);
+      }
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const callbackUrl = `${frontendUrl}/wallet`;
+
+    const nameParts = (req.user.name || 'User').split(' ');
+    
+    // Create a pending transaction for the top-up
+    const tx = await Transaction.create({
+      user: req.user._id,
+      type: 'wallet_topup',
+      amount: amount,
+      status: 'pending',
+      description: 'Wallet Top-Up via Pesapal'
+    });
+
+    const pesapalPayload = {
+      id: `${tx._id}`, // Using Transaction ID as reference
+      currency: 'UGX',
+      amount: amount,
+      description: `Wallet Top-Up for ${req.user.name}`,
+      callback_url: callbackUrl,
+      notification_id: ipnId || '',
+      billing_address: {
+        email_address: req.user.email || 'user@example.com',
+        phone_number: req.user.phone || '',
+        country_code: 'UG',
+        first_name: nameParts[0] || 'User',
+        middle_name: '',
+        last_name: nameParts.slice(1).join(' ') || 'User',
+        line_1: '', line_2: '', city: '', state: '', postal_code: '', zip_code: ''
+      }
+    };
+
+    const pesapalResponse = await pesapalUtils.createPesapalOrder(pesapalPayload);
+
+    if (pesapalResponse && pesapalResponse.redirect_url) {
+      res.json({ redirect_url: pesapalResponse.redirect_url });
+    } else {
+      res.status(400).json({ message: 'Failed to generate Pesapal payment link' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Server Error' });
+  }
+};
+
+// @desc    Handle Pesapal IPN for Top-Up
+// @route   GET /api/wallet/topup-ipn or POST /api/wallet/topup-ipn
+// @access  Public
+const handleTopUpIPN = async (req, res) => {
+  try {
+    const pesapalUtils = require('../utils/pesapalUtils');
+    const orderTrackingId = req.query.OrderTrackingId || req.body.OrderTrackingId;
+    const merchantReference = req.query.OrderMerchantReference || req.body.OrderMerchantReference; // Transaction ID
+
+    if (!orderTrackingId || !merchantReference) {
+      return res.status(400).json({ message: 'Missing parameters' });
+    }
+
+    const statusData = await pesapalUtils.getPesapalTransactionStatus(orderTrackingId);
+    
+    if (statusData.payment_status_description === 'Completed') {
+      const tx = await Transaction.findById(merchantReference);
+      
+      if (tx && tx.status !== 'completed') {
+        tx.status = 'completed';
+        await tx.save();
+
+        const user = await User.findById(tx.user);
+        if (user) {
+          if (!user.wallet) user.wallet = { pendingBalance: 0, availableBalance: 0 };
+          user.wallet.availableBalance += tx.amount;
+          await user.save();
+          console.log(`[WALLET TOPUP] Added UGX ${tx.amount} to ${user.name}`);
+        }
+      }
+    }
+    
+    res.json({ status: 200, message: "IPN Received" });
+  } catch (error) {
+    console.error('Pesapal IPN Error:', error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+// @desc    Get all pending withdrawal requests (Admin)
+// @route   GET /api/wallet/withdrawals
+// @access  Private/Admin
+const getPendingWithdrawals = async (req, res) => {
+  try {
+    const withdrawals = await Transaction.find({ type: 'withdrawal_request', status: 'pending' })
+      .populate('user', 'name email phone payout')
+      .sort({ createdAt: -1 });
+    res.json(withdrawals);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+// @desc    Approve a manual withdrawal request (Admin)
+// @route   PUT /api/wallet/withdrawals/:id/approve
+// @access  Private/Admin
+const approveWithdrawal = async (req, res) => {
+  try {
+    const tx = await Transaction.findById(req.params.id).populate('user', 'name email');
+    
+    if (!tx || tx.type !== 'withdrawal_request') {
+      return res.status(404).json({ message: 'Withdrawal request not found' });
+    }
+
+    if (tx.status === 'completed') {
+      return res.status(400).json({ message: 'Already marked as paid' });
+    }
+
+    tx.status = 'completed';
+    tx.description += ' (Admin Approved & Paid)';
+    await tx.save();
+
+    // Send email to user
+    const sendEmail = require('../utils/sendEmail');
+    if (tx.user && tx.user.email) {
+      sendEmail({
+        to: tx.user.email,
+        subject: `Withdrawal Approved - UGX ${tx.amount}`,
+        html: `<h1>Withdrawal Successful!</h1><p>Hi ${tx.user.name}, your withdrawal request for UGX ${tx.amount} has been processed and sent to your account.</p>`
+      });
+    }
+
+    res.json(tx);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
 module.exports = {
   getWalletDetails,
-  requestWithdrawal
+  requestWithdrawal,
+  topUpWallet,
+  handleTopUpIPN,
+  getPendingWithdrawals,
+  approveWithdrawal
 };

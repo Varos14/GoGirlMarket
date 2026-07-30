@@ -15,6 +15,7 @@ import CartScreen from './pages/CartScreen';
 import InfoPageScreen from './pages/InfoPageScreen';
 import VendorStoreScreen from './pages/VendorStoreScreen';
 import WishlistScreen from './pages/WishlistScreen';
+import WalletScreen from './pages/WalletScreen';
 import Footer from './components/Footer';
 import SearchBox from './components/SearchBox';
 import ChatbotWidget from './components/ChatbotWidget';
@@ -155,6 +156,7 @@ function App() {
           <Route path="/checkout" element={<CheckoutScreen />} />
           <Route path="/order/:id" element={<OrderScreen />} />
           <Route path="/wishlist" element={<WishlistScreen />} />
+          <Route path="/wallet" element={<WalletScreen />} />
 
           {/* Static Pages */}
           <Route path="/contact" element={<InfoPageScreen title="Contact Us" content={<><p>Need help? We're here for you.</p><p>Email us at: <strong>support@gogirlmarket.com</strong></p><p>Call us at: <strong>+256 123 456 789</strong></p></>} />} />

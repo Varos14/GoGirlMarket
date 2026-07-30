@@ -513,7 +513,7 @@ const updateOrderToDelivered = async (req, res) => {
         clearanceDate.setDate(clearanceDate.getDate() + 3);
 
         await Transaction.create({
-          vendor: vendorIdToDeliver,
+          user: vendorIdToDeliver,
           order: updatedOrder._id,
           type: 'credit_pending',
           amount: payoutAmount,
@@ -879,7 +879,7 @@ const raiseOrderDispute = async (req, res) => {
 // @access  Private/Admin
 const resolveOrderDispute = async (req, res) => {
   try {
-    const { vendorId, action } = req.body; // action: 'approve_refund' or 'reject'
+    const { vendorId, action } = req.body; // action: 'approve_refund' or 'release'
     const order = await Order.findById(req.params.id);
 
     if (!order) {
@@ -891,14 +891,98 @@ const resolveOrderDispute = async (req, res) => {
       return res.status(404).json({ message: 'Vendor package not found in this order' });
     }
 
+    if (vOrder.disputeStatus !== 'Open') {
+      return res.status(400).json({ message: 'Dispute is not open' });
+    }
+
+    const vendor = await require('../models/User').findById(vendorId);
+    const buyer = await require('../models/User').findById(order.user);
+    const Transaction = require('../models/Transaction');
+    
+    // Find the pending credit transaction for this vendor/order
+    const pendingTx = await Transaction.findOne({
+      user: vendorId,
+      order: order._id,
+      type: 'credit_pending',
+      status: 'pending'
+    });
+
     if (action === 'approve_refund') {
       vOrder.disputeStatus = 'Resolved_Refunded';
+      
+      if (pendingTx) {
+        pendingTx.status = 'failed';
+        pendingTx.description += ' (Refunded due to Dispute)';
+        await pendingTx.save();
+        
+        // Deduct from vendor pending balance
+        if (vendor.wallet) {
+          vendor.wallet.pendingBalance -= pendingTx.amount;
+          if (vendor.wallet.pendingBalance < 0) vendor.wallet.pendingBalance = 0;
+          await vendor.save();
+        }
+
+        // Add to buyer available balance
+        if (buyer) {
+          if (!buyer.wallet) buyer.wallet = { pendingBalance: 0, availableBalance: 0 };
+          buyer.wallet.availableBalance += pendingTx.amount; // Give them back the amount
+          await buyer.save();
+          
+          await Transaction.create({
+            user: buyer._id,
+            order: order._id,
+            type: 'refund',
+            amount: pendingTx.amount,
+            status: 'completed',
+            description: `Dispute Refund for Order #${order._id}`
+          });
+        }
+      }
+    } else if (action === 'release') {
+      vOrder.disputeStatus = 'Resolved_Released';
+      
+      // Fast-track release to vendor
+      if (pendingTx) {
+        pendingTx.status = 'completed';
+        pendingTx.description += ' (Dispute Resolved - Funds Cleared)';
+        await pendingTx.save();
+        
+        if (vendor.wallet) {
+          vendor.wallet.pendingBalance -= pendingTx.amount;
+          if (vendor.wallet.pendingBalance < 0) vendor.wallet.pendingBalance = 0;
+          vendor.wallet.availableBalance += pendingTx.amount;
+          await vendor.save();
+        }
+
+        await Transaction.create({
+          user: vendorId,
+          order: order._id,
+          type: 'cleared',
+          amount: pendingTx.amount,
+          status: 'completed',
+          description: `Dispute Won - Funds Cleared for Order #${order._id}`
+        });
+      }
     } else {
-      vOrder.disputeStatus = 'Rejected';
+      return res.status(400).json({ message: 'Invalid action' });
     }
 
     await order.save();
-    res.json({ message: `Dispute ${action === 'approve_refund' ? 'refund approved' : 'rejected'}`, order });
+    res.json({ message: `Dispute ${action === 'approve_refund' ? 'refund approved' : 'funds released to vendor'}`, order });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+// @desc    Get all disputed orders (Admin)
+// @route   GET /api/orders/disputes
+// @access  Private/Admin
+const getDisputedOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ 'vendorOrders.disputeStatus': 'Open' })
+      .populate('user', 'name email')
+      .sort({ createdAt: -1 });
+    res.json(orders);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
@@ -935,5 +1019,6 @@ module.exports = {
   verifyPesapalPayment,
   raiseOrderDispute,
   resolveOrderDispute,
+  getDisputedOrders,
   cancelOrder,
 };

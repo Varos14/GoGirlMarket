@@ -57,7 +57,12 @@ const ProfileScreen = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* User Profile Form */}
         <div className="bg-surface p-6 rounded-3xl border border-borderLight shadow-xs h-fit space-y-4">
-          <h2 className="text-lg font-heading font-bold text-primary border-b border-borderLight pb-3">Account Details</h2>
+          <div className="flex justify-between items-center border-b border-borderLight pb-3">
+            <h2 className="text-lg font-heading font-bold text-primary">Account Details</h2>
+            <Link to="/wallet" className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full hover:bg-blue-100 transition-colors">
+              💳 My Wallet
+            </Link>
+          </div>
           {message && <div className="bg-emerald-50 text-emerald-700 p-3 rounded-xl text-xs border border-emerald-200">{message}</div>}
           {errorAuth && <div className="bg-red-50 text-red-700 p-3 rounded-xl text-xs border border-red-200">{errorAuth}</div>}
           

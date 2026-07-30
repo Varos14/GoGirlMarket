@@ -1,11 +1,13 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Store, LogOut, ClipboardList, Package } from 'lucide-react';
+import { LayoutDashboard, Users, Store, LogOut, ClipboardList, Package, ShieldCheck } from 'lucide-react';
 import DashboardScreen from './pages/DashboardScreen';
 import UsersScreen from './pages/UsersScreen';
 import OrdersScreen from './pages/OrdersScreen';
 import VendorsScreen from './pages/VendorsScreen';
 import ProductsScreen from './pages/ProductsScreen';
+import DisputesScreen from './pages/DisputesScreen';
+import WithdrawalsScreen from './pages/WithdrawalsScreen';
 import LoginScreen from './pages/LoginScreen';
 import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
@@ -60,6 +62,14 @@ function AdminLayout() {
                 <Package size={15} />
                 Products
               </Link>
+              <Link to="/disputes" className={`text-xs ${isActive('/disputes')}`}>
+                <ShieldCheck size={15} />
+                Disputes
+              </Link>
+              <Link to="/withdrawals" className={`text-xs ${isActive('/withdrawals')}`}>
+                <ClipboardList size={15} />
+                Payouts
+              </Link>
             </nav>
 
             {/* Profile & Logout */}
@@ -97,6 +107,8 @@ function AdminLayout() {
           <Route path="/vendors" element={<VendorsScreen />} />
           <Route path="/products" element={<ProductsScreen />} />
           <Route path="/orders" element={<OrdersScreen />} />
+          <Route path="/disputes" element={<DisputesScreen />} />
+          <Route path="/withdrawals" element={<WithdrawalsScreen />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
