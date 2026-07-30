@@ -6,11 +6,6 @@ const WalletScreen = () => {
   const [wallet, setWallet] = useState({ availableBalance: 0, pendingBalance: 0 });
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [accountBank, setAccountBank] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [withdrawing, setWithdrawing] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
 
   const fetchWallet = async () => {
     try {
@@ -34,46 +29,6 @@ const WalletScreen = () => {
     fetchWallet();
   }, []);
 
-  const handleWithdraw = async (e) => {
-    e.preventDefault();
-    setMessage({ type: '', text: '' });
-    
-    const amount = Number(withdrawAmount);
-    if (!amount || amount <= 0) {
-      setMessage({ type: 'error', text: 'Please enter a valid amount' });
-      return;
-    }
-    
-    if (amount > wallet.availableBalance) {
-      setMessage({ type: 'error', text: 'Insufficient available balance' });
-      return;
-    }
-
-    if (!accountBank || !accountNumber) {
-      setMessage({ type: 'error', text: 'Please provide Bank Code and Account Number' });
-      return;
-    }
-
-    setWithdrawing(true);
-    try {
-      const vendorInfoStr = localStorage.getItem('vendorInfo');
-      const vendorInfo = JSON.parse(vendorInfoStr);
-      const config = { headers: { Authorization: `Bearer ${vendorInfo.token}` } };
-      
-      await axios.post('/api/wallet/withdraw', { 
-        amount,
-        account_bank: accountBank,
-        account_number: accountNumber
-      }, config);
-      
-      setMessage({ type: 'success', text: 'Withdrawal processed successfully. Funds are on the way!' });
-      setWithdrawAmount('');
-      fetchWallet(); // Refresh data
-    } catch (error) {
-      setMessage({ type: 'error', text: error.response?.data?.message || 'Error requesting withdrawal' });
-    }
-    setWithdrawing(false);
-  };
 
   const getTransactionIcon = (type) => {
     switch(type) {
@@ -135,67 +90,26 @@ const WalletScreen = () => {
               <h2 className="text-2xl font-heading font-bold text-primary">UGX {wallet.pendingBalance.toLocaleString()}</h2>
             </div>
 
-            {/* Withdraw Form */}
-            <div className="vendor-card p-6">
-              <h3 className="font-heading font-bold text-base text-primary mb-4 border-b border-borderLight pb-3">Request Payout</h3>
+            {/* Automated Payouts Banner */}
+            <div className="vendor-card p-6 bg-gray-900 text-white flex flex-col justify-between rounded-xl shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
               
-              {message.text && (
-                <div className={`p-3 rounded-2xl mb-4 text-xs font-semibold flex items-start gap-2 ${message.type === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
-                  {message.type === 'error' ? <AlertCircle size={15} className="mt-0.5 flex-shrink-0"/> : <CheckCircle size={15} className="mt-0.5 flex-shrink-0"/>}
-                  <p>{message.text}</p>
+              <div className="flex justify-between items-start mb-4 relative z-10">
+                <span className="px-3 py-1 rounded-full text-[10px] font-bold text-white bg-white/20 border border-white/10">System Controlled</span>
+                <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+                  <CheckCircle size={20}/>
                 </div>
-              )}
-
-              <form onSubmit={handleWithdraw}>
-                <div className="mb-4">
-                  <label className="block text-gray-600 text-sm font-bold mb-2">Amount (UGX)</label>
-                  <input
-                    type="number"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                    placeholder="e.g. 50000"
-                    min="1000"
-                    max={wallet.availableBalance}
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-gray-600 text-sm font-bold mb-2">Bank / Mobile Money Provider Code</label>
-                  <select 
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                    value={accountBank}
-                    onChange={(e) => setAccountBank(e.target.value)}
-                  >
-                    <option value="">Select Provider</option>
-                    <option value="MTN">MTN Mobile Money</option>
-                    <option value="AIRTEL">Airtel Money</option>
-                    <option value="FCMB">FCMB</option>
-                    <option value="044">Access Bank</option>
-                  </select>
-                </div>
-                <div className="mb-6">
-                  <label className="block text-gray-600 text-sm font-bold mb-2">Account Number / Phone Number</label>
-                  <input
-                    type="text"
-                    value={accountNumber}
-                    onChange={(e) => setAccountNumber(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                    placeholder="e.g. 0770000000"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={withdrawing || wallet.availableBalance <= 0}
-                  className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
-                >
-                  {withdrawing ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                  ) : (
-                    'Withdraw Funds Instantly'
-                  )}
-                </button>
-                <p className="text-xs text-gray-400 mt-3 text-center">Funds will be sent automatically via Flutterwave Transfers.</p>
-              </form>
+              </div>
+              
+              <div className="relative z-10">
+                <h3 className="font-heading font-bold text-lg mb-2">Automated Payouts</h3>
+                <p className="text-sm text-gray-300 leading-relaxed">
+                  Your Available Balance is automatically deposited into your registered bank or mobile money account every week. 
+                </p>
+                <p className="text-xs text-gray-400 mt-4 border-t border-white/10 pt-3">
+                  No manual withdrawal requests required.
+                </p>
+              </div>
             </div>
           </div>
 

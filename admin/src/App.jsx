@@ -7,7 +7,7 @@ import OrdersScreen from './pages/OrdersScreen';
 import VendorsScreen from './pages/VendorsScreen';
 import ProductsScreen from './pages/ProductsScreen';
 import DisputesScreen from './pages/DisputesScreen';
-import WithdrawalsScreen from './pages/WithdrawalsScreen';
+import PayoutsScreen from './pages/PayoutsScreen';
 import LoginScreen from './pages/LoginScreen';
 import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
@@ -66,7 +66,7 @@ function AdminLayout() {
                 <ShieldCheck size={15} />
                 Disputes
               </Link>
-              <Link to="/withdrawals" className={`text-xs ${isActive('/withdrawals')}`}>
+              <Link to="/payouts" className={`text-xs ${isActive('/payouts')}`}>
                 <ClipboardList size={15} />
                 Payouts
               </Link>
@@ -108,7 +108,7 @@ function AdminLayout() {
           <Route path="/products" element={<ProductsScreen />} />
           <Route path="/orders" element={<OrdersScreen />} />
           <Route path="/disputes" element={<DisputesScreen />} />
-          <Route path="/withdrawals" element={<WithdrawalsScreen />} />
+          <Route path="/payouts" element={<PayoutsScreen />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
