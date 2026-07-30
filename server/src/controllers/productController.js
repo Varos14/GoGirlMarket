@@ -89,7 +89,13 @@ const getProducts = async (req, res) => {
     ratingFilter = { rating: { $gte: Number(req.query.minRating) } };
   }
 
-  const query = { ...keyword, ...category, ...vendor, ...featured, ...priceFilter, ...ratingFilter };
+  // Flash Sale filter
+  let flashSaleFilter = {};
+  if (req.query.isFlashSale === 'true') {
+    flashSaleFilter = { flashSalePrice: { $exists: true, $gt: 0 } };
+  }
+
+  const query = { ...keyword, ...category, ...vendor, ...featured, ...priceFilter, ...ratingFilter, ...flashSaleFilter };
 
   let sortCriteria = { isSponsored: -1, createdAt: -1 };
   if (req.query.sort === 'lowest') {

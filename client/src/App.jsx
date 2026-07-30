@@ -3,6 +3,7 @@ import { Routes, Route, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import HomeScreen from './pages/HomeScreen';
 import ShopScreen from './pages/ShopScreen';
+import FlashSaleScreen from './pages/FlashSaleScreen';
 import ProductDetailsScreen from './pages/ProductDetailsScreen';
 import CheckoutScreen from './pages/CheckoutScreen';
 import LoginScreen from './pages/LoginScreen';
@@ -145,6 +146,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomeScreen />} />
           <Route path="/shop" element={<ShopScreen />} />
+          <Route path="/flash-sale" element={<FlashSaleScreen />} />
           <Route path="/product/:id" element={<ProductDetailsScreen />} />
           <Route path="/store/:slug" element={<VendorStoreScreen />} />
           <Route path="/cart" element={<CartScreen />} />

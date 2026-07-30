@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { addToCart } from '../store/cartSlice';
 import { Star, Heart, TrendingUp } from 'lucide-react';
 import axios from 'axios';
+import FlashSaleBanner from '../components/FlashSaleBanner';
 
 const HomeScreen = () => {
   const dispatch = useDispatch();
@@ -196,41 +197,7 @@ const HomeScreen = () => {
       </section>
 
       {/* Flash Deals & Live Countdown Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-r from-primary via-[#2C2D35] to-primary rounded-3xl p-6 sm:p-8 text-surface shadow-md border border-borderDark flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
-          <div className="space-y-2 z-10">
-            <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-accent text-white uppercase tracking-wider inline-flex items-center gap-1.5 shadow-xs">
-              🔥 Limited Time Offer
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-heading font-bold text-surface">
-              GoGirl Flash Sale & Mega Deals
-            </h2>
-            <p className="text-xs text-surface/70">Save up to 40% on top footwear, skincare & accessories. Offers refresh daily!</p>
-          </div>
-
-          <div className="flex items-center gap-3 z-10">
-            <div className="flex items-center gap-2 bg-surface/10 backdrop-blur-md p-3 rounded-2xl border border-surface/15 text-center">
-              <div className="w-10 text-center">
-                <span className="block text-xl font-heading font-bold text-accent">08</span>
-                <span className="text-[9px] uppercase tracking-wider text-surface/60 font-semibold">Hours</span>
-              </div>
-              <span className="text-accent font-bold text-lg">:</span>
-              <div className="w-10 text-center">
-                <span className="block text-xl font-heading font-bold text-accent">45</span>
-                <span className="text-[9px] uppercase tracking-wider text-surface/60 font-semibold">Mins</span>
-              </div>
-              <span className="text-accent font-bold text-lg">:</span>
-              <div className="w-10 text-center">
-                <span className="block text-xl font-heading font-bold text-accent">22</span>
-                <span className="text-[9px] uppercase tracking-wider text-surface/60 font-semibold">Secs</span>
-              </div>
-            </div>
-            <Link to="/shop?category=deals" className="btn-primary bg-accent hover:bg-accent/90 text-white py-3.5 px-6 text-xs font-bold shadow-md shrink-0">
-              Claim Deals
-            </Link>
-          </div>
-        </div>
-      </section>
+      <FlashSaleBanner />
 
       {/* Category Quick Pills / Avatars */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
