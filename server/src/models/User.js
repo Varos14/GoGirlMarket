@@ -2,6 +2,15 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
+const vendorReviewSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  rating: { type: Number, required: true, min: 1, max: 5 },
+  comment: { type: String, required: true },
+  user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
+}, {
+  timestamps: true,
+});
+
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
@@ -43,6 +52,10 @@ const userSchema = new mongoose.Schema({
     instagram: { type: String, default: '' },
     tiktok: { type: String, default: '' },
   },
+  // Vendor Reviews
+  reviews: [vendorReviewSchema],
+  rating: { type: Number, default: 0 },
+  numReviews: { type: Number, default: 0 },
 
   // Vendor Subscription System
   subscription: {

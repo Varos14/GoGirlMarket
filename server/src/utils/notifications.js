@@ -1,8 +1,7 @@
-const nodemailer = require('nodemailer');
+const sendEmailUtils = require('./sendEmail');
 const twilio = require('twilio');
 
 // Initialize Twilio Client
-// Ensure TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER are in .env
 let twilioClient;
 try {
   if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
@@ -10,25 +9,6 @@ try {
   }
 } catch (error) {
   console.error("Twilio initialization error:", error.message);
-}
-
-// Initialize Nodemailer transporter
-// Ensure EMAIL_HOST, EMAIL_PORT, EMAIL_USER, and EMAIL_PASS are in .env
-let transporter;
-try {
-  if (process.env.EMAIL_HOST && process.env.EMAIL_USER) {
-    transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT || 587,
-      secure: process.env.EMAIL_PORT == 465, 
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-  }
-} catch (error) {
-  console.error("Nodemailer initialization error:", error.message);
 }
 
 /**
@@ -60,18 +40,12 @@ const sendSMS = async (to, message) => {
  * @param {string} text - The email body (plain text)
  */
 const sendEmail = async (to, subject, text) => {
-  if (!transporter) {
-    console.warn("Email not sent: Nodemailer transporter is not configured.");
-    return;
-  }
   try {
-    await transporter.sendMail({
-      from: `"GoGirl Market" <${process.env.EMAIL_USER}>`,
+    await sendEmailUtils({
       to,
       subject,
-      text,
+      html: `<p>${text.replace(/\n/g, '<br/>')}</p>`
     });
-    console.log(`Email sent to ${to}`);
   } catch (error) {
     console.error(`Failed to send Email to ${to}:`, error.message);
   }

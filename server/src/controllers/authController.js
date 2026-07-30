@@ -26,6 +26,22 @@ const registerUser = async (req, res) => {
     });
 
     if (user) {
+      // Send Welcome Email
+      try {
+        const welcomeMessage = `
+          <h1>Welcome to GoGirl Market, ${user.name}!</h1>
+          <p>We are thrilled to have you on board.</p>
+          ${user.role === 'vendor' ? '<p>Your vendor account is currently pending approval. We will notify you once it is approved.</p>' : '<p>Start shopping from our incredible women-owned businesses today!</p>'}
+        `;
+        await sendEmail({
+          to: user.email,
+          subject: 'Welcome to GoGirl Market',
+          html: welcomeMessage,
+        });
+      } catch (err) {
+        console.error('Welcome email could not be sent', err);
+      }
+
       res.status(201).json({
         _id: user._id,
         name: user.name,

@@ -5,12 +5,16 @@ const { getUsers, deleteUser, updateUserRole, getVendorBySlug,  getUserWishlist,
   removeWishlistItem,
   suspendVendor,
   approveVendor,
-  buyCredits
+  buyCredits,
+  createVendorReview
 } = require('../controllers/userController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.route('/store/:slug')
   .get(getVendorBySlug);
+
+router.route('/store/:id/reviews')
+  .post(protect, createVendorReview);
 
 router.route('/wishlist')
   .get(protect, getUserWishlist)

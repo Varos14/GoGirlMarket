@@ -12,6 +12,12 @@ const ShopScreen = () => {
   const categoryParam = queryParams.get('category') || '';
   const keywordParam = queryParams.get('keyword') || '';
   const [sort, setSort] = useState('newest');
+  
+  // Filter States
+  const [minPriceInput, setMinPriceInput] = useState('');
+  const [maxPriceInput, setMaxPriceInput] = useState('');
+  const [minRatingInput, setMinRatingInput] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState({ minPrice: '', maxPrice: '', minRating: '' });
 
   const productList = useSelector((state) => state.products);
   const { loading, error, products, page, pages } = productList;
@@ -24,18 +30,30 @@ const ShopScreen = () => {
 
   // Initial load or sort/filter change
   useEffect(() => {
-    dispatch(fetchProducts({ category: categoryParam, keyword: keywordParam, sort, pageNumber: 1 }));
-  }, [dispatch, categoryParam, keywordParam, sort]);
+    dispatch(fetchProducts({ 
+      category: categoryParam, 
+      keyword: keywordParam, 
+      sort, 
+      pageNumber: 1,
+      ...appliedFilters
+    }));
+  }, [dispatch, categoryParam, keywordParam, sort, appliedFilters]);
 
   // Observer callback for infinite scroll
   const handleObserver = useCallback((entries) => {
     const target = entries[0];
     if (target.isIntersecting && page < pages && !loading && !isFetching) {
       setIsFetching(true);
-      dispatch(fetchProducts({ category: categoryParam, keyword: keywordParam, sort, pageNumber: page + 1 }))
+      dispatch(fetchProducts({ 
+        category: categoryParam, 
+        keyword: keywordParam, 
+        sort, 
+        pageNumber: page + 1,
+        ...appliedFilters
+      }))
         .finally(() => setIsFetching(false));
     }
-  }, [dispatch, categoryParam, keywordParam, sort, page, pages, loading, isFetching]);
+  }, [dispatch, categoryParam, keywordParam, sort, appliedFilters, page, pages, loading, isFetching]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(handleObserver, {
@@ -79,6 +97,14 @@ const ShopScreen = () => {
         console.error('Failed to register ad click', err);
       }
     }
+  };
+
+  const applyFiltersHandler = () => {
+    setAppliedFilters({
+      minPrice: minPriceInput,
+      maxPrice: maxPriceInput,
+      minRating: minRatingInput
+    });
   };
 
   return (
@@ -137,12 +163,49 @@ const ShopScreen = () => {
           </div>
 
           <div className="border-t border-borderLight pt-4">
-            <h3 className="text-sm font-heading font-bold text-primary uppercase tracking-wider mb-3">Price Filter</h3>
-            <div className="flex gap-2">
-              <input type="number" placeholder="Min" className="w-full p-2.5 text-xs bg-background border border-borderLight rounded-xl outline-none focus:border-accent" />
-              <input type="number" placeholder="Max" className="w-full p-2.5 text-xs bg-background border border-borderLight rounded-xl outline-none focus:border-accent" />
+            <h3 className="text-sm font-heading font-bold text-primary uppercase tracking-wider mb-3">Filters</h3>
+            
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-textMuted mb-2">Price Range (UGX)</label>
+              <div className="flex gap-2">
+                <input 
+                  type="number" 
+                  placeholder="Min" 
+                  value={minPriceInput}
+                  onChange={(e) => setMinPriceInput(e.target.value)}
+                  className="w-full p-2.5 text-xs bg-background border border-borderLight rounded-xl outline-none focus:border-accent" 
+                />
+                <input 
+                  type="number" 
+                  placeholder="Max" 
+                  value={maxPriceInput}
+                  onChange={(e) => setMaxPriceInput(e.target.value)}
+                  className="w-full p-2.5 text-xs bg-background border border-borderLight rounded-xl outline-none focus:border-accent" 
+                />
+              </div>
             </div>
-            <button className="w-full btn-secondary mt-3 py-2 text-xs">Apply Filter</button>
+
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-textMuted mb-2">Minimum Rating</label>
+              <select
+                value={minRatingInput}
+                onChange={(e) => setMinRatingInput(e.target.value)}
+                className="w-full p-2.5 text-xs bg-background border border-borderLight rounded-xl outline-none focus:border-accent"
+              >
+                <option value="">Any Rating</option>
+                <option value="4">4 Stars & Up</option>
+                <option value="3">3 Stars & Up</option>
+                <option value="2">2 Stars & Up</option>
+                <option value="1">1 Star & Up</option>
+              </select>
+            </div>
+
+            <button 
+              onClick={applyFiltersHandler}
+              className="w-full btn-secondary mt-2 py-2 text-xs"
+            >
+              Apply Filters
+            </button>
           </div>
         </div>
 

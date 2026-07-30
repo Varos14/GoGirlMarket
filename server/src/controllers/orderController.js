@@ -547,6 +547,12 @@ const getDashboardStats = async (req, res) => {
     let totalRevenue = 0;
     let platformCommission = 0;
 
+    const vendorList = await User.find({ role: 'vendor' });
+    const vendorMap = {};
+    vendorList.forEach(v => {
+      vendorMap[v._id.toString()] = v.commissionRate || 10;
+    });
+
     for (const order of paidOrders) {
       totalRevenue += order.totalPrice;
       
@@ -563,7 +569,7 @@ const getDashboardStats = async (req, res) => {
     }
     
     const totalUsers = await User.countDocuments({});
-    const totalVendors = await User.countDocuments({ role: 'vendor' });
+    const totalVendors = vendorList.length;
 
     // Aggregate Ad Revenue
     const adRevenue = vendorList.reduce((acc, v) => acc + (v.wallet?.adSpend || 0), 0);
@@ -580,6 +586,7 @@ const getDashboardStats = async (req, res) => {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
+
 
 // @desc    Update overall order status (Jumia-style)
 // @route   PUT /api/orders/:id/status

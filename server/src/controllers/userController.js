@@ -233,6 +233,48 @@ const buyCredits = async (req, res) => {
   }
 };
 
+// @desc    Create new vendor review
+// @route   POST /api/users/store/:id/reviews
+// @access  Private
+const createVendorReview = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+
+    const vendor = await User.findById(req.params.id);
+
+    if (vendor && vendor.role === 'vendor') {
+      const alreadyReviewed = vendor.reviews.find(
+        (r) => r.user.toString() === req.user._id.toString()
+      );
+
+      if (alreadyReviewed) {
+        res.status(400).json({ message: 'Vendor already reviewed by you' });
+        return;
+      }
+
+      const review = {
+        name: req.user.name,
+        rating: Number(rating),
+        comment,
+        user: req.user._id,
+      };
+
+      vendor.reviews.push(review);
+      vendor.numReviews = vendor.reviews.length;
+      vendor.rating =
+        vendor.reviews.reduce((acc, item) => item.rating + acc, 0) /
+        vendor.reviews.length;
+
+      await vendor.save();
+      res.status(201).json({ message: 'Review added' });
+    } else {
+      res.status(404).json({ message: 'Vendor not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getUsers,
   deleteUser,
@@ -244,4 +286,5 @@ module.exports = {
   suspendVendor,
   approveVendor,
   buyCredits,
+  createVendorReview,
 };

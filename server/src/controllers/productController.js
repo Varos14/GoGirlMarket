@@ -75,7 +75,21 @@ const getProducts = async (req, res) => {
   // Featured filter
   const featured = req.query.featured === 'true' ? { isFeatured: true } : {};
 
-  const query = { ...keyword, ...category, ...vendor, ...featured };
+  // Price filter
+  let priceFilter = {};
+  if (req.query.minPrice || req.query.maxPrice) {
+    priceFilter = { price: {} };
+    if (req.query.minPrice) priceFilter.price.$gte = Number(req.query.minPrice);
+    if (req.query.maxPrice) priceFilter.price.$lte = Number(req.query.maxPrice);
+  }
+
+  // Rating filter
+  let ratingFilter = {};
+  if (req.query.minRating) {
+    ratingFilter = { rating: { $gte: Number(req.query.minRating) } };
+  }
+
+  const query = { ...keyword, ...category, ...vendor, ...featured, ...priceFilter, ...ratingFilter };
 
   let sortCriteria = { isSponsored: -1, createdAt: -1 };
   if (req.query.sort === 'lowest') {

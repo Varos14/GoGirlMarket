@@ -14,6 +14,13 @@ const VendorStoreScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('products');
+  
+  // Review State
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const [reviewSuccess, setReviewSuccess] = useState(false);
 
   useEffect(() => {
     const fetchVendorStore = async () => {
@@ -36,7 +43,32 @@ const VendorStoreScreen = () => {
     };
 
     fetchVendorStore();
-  }, [slug, navigate, userInfo]);
+  }, [slug, navigate, userInfo, reviewSuccess]);
+
+  const submitReviewHandler = async (e) => {
+    e.preventDefault();
+    setReviewLoading(true);
+    setReviewError('');
+    try {
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+      await axios.post(`/api/users/store/${storeData.vendor._id}/reviews`, { rating, comment }, config);
+      setReviewLoading(false);
+      setReviewSuccess(true);
+      alert('Vendor review submitted successfully!');
+      setRating(0);
+      setComment('');
+      // The useEffect will re-trigger because reviewSuccess changed, re-fetching the store data
+      setReviewSuccess(false); 
+    } catch (error) {
+      setReviewLoading(false);
+      setReviewError(error.response?.data?.message || error.message);
+    }
+  };
 
   // If user isn't logged in but data is fetching, or we are redirecting, just show a loading state
   if (loading || (!userInfo && !error)) {
@@ -79,6 +111,12 @@ const VendorStoreScreen = () => {
             {vendor.tagline && (
               <p className="text-xl text-white/90 font-medium mb-4">{vendor.tagline}</p>
             )}
+            
+            <div className="flex items-center justify-center md:justify-start gap-2 mb-4 bg-black/10 inline-flex px-3 py-1.5 rounded-full">
+              <span className="text-amber-400 text-sm font-bold">★ {vendor.rating ? vendor.rating.toFixed(1) : '0.0'}</span>
+              <span className="text-white/80 text-xs">({vendor.numReviews || 0} Reviews)</span>
+            </div>
+
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-white/80 font-medium">
               {vendor.location && (
                 <span className="flex items-center gap-1 bg-black/10 px-3 py-1.5 rounded-full">
@@ -128,6 +166,12 @@ const VendorStoreScreen = () => {
             >
               About Vendor
             </button>
+            <button 
+              onClick={() => setActiveTab('reviews')}
+              className={`py-4 font-bold border-b-2 transition-colors ${activeTab === 'reviews' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+            >
+              Reviews ({vendor.numReviews || 0})
+            </button>
           </div>
         </div>
       </div>
@@ -172,7 +216,7 @@ const VendorStoreScreen = () => {
               </div>
             )}
           </>
-        ) : (
+        ) : activeTab === 'about' ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
               <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
@@ -245,6 +289,89 @@ const VendorStoreScreen = () => {
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        ) : (
+          <div className="max-w-4xl mx-auto space-y-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-8 border-b pb-4">
+              Vendor Reviews
+            </h2>
+
+            {/* Existing Reviews */}
+            {(!vendor.reviews || vendor.reviews.length === 0) ? (
+              <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500">
+                This vendor has no reviews yet.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {vendor.reviews.map((review) => (
+                  <div key={review._id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-gray-800">{review.name}</span>
+                      <span className="text-amber-400 text-sm font-bold">
+                        {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400">{review.createdAt.substring(0, 10)}</p>
+                    <p className="text-gray-600 mt-2">{review.comment}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Write a Review */}
+            <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-100 mt-8">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Write a Review for {vendor.storeName || vendor.name}</h3>
+              {reviewError && (
+                <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-4 text-sm border border-red-100">
+                  {reviewError}
+                </div>
+              )}
+
+              {userInfo ? (
+                <form onSubmit={submitReviewHandler} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Rating</label>
+                    <select
+                      value={rating}
+                      onChange={(e) => setRating(Number(e.target.value))}
+                      className="w-full md:w-1/3 bg-gray-50 border border-gray-200 text-gray-800 p-3 rounded-lg outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      required
+                    >
+                      <option value="">Select rating...</option>
+                      <option value="5">5 ★★★★★ Excellent</option>
+                      <option value="4">4 ★★★★☆ Very Good</option>
+                      <option value="3">3 ★★★☆☆ Good</option>
+                      <option value="2">2 ★★☆☆☆ Fair</option>
+                      <option value="1">1 ★☆☆☆☆ Poor</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Comment</label>
+                    <textarea
+                      rows="4"
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-800 p-3 rounded-lg outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      placeholder="Share your experience buying from this vendor..."
+                      required
+                    ></textarea>
+                  </div>
+
+                  <button
+                    disabled={reviewLoading}
+                    type="submit"
+                    className="btn-primary py-3 px-8 rounded-lg font-bold shadow-sm"
+                  >
+                    {reviewLoading ? 'Submitting...' : 'Post Review'}
+                  </button>
+                </form>
+              ) : (
+                <p className="text-gray-500">
+                  Please <Link to={`/login?redirect=/store/${slug}`} className="text-primary font-bold hover:underline">sign in</Link> to write a review.
+                </p>
+              )}
             </div>
           </div>
         )}

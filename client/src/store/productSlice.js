@@ -3,9 +3,13 @@ import axios from 'axios';
 
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
-  async ({ keyword = '', category = '', sort = '', pageNumber = 1 } = {}, { rejectWithValue }) => {
+  async ({ keyword = '', category = '', sort = '', pageNumber = 1, minPrice = '', maxPrice = '', minRating = '' } = {}, { rejectWithValue }) => {
     try {
-      const { data } = await axios.get(`/api/products?keyword=${keyword}&category=${category}&sort=${sort}&pageNumber=${pageNumber}`);
+      let url = `/api/products?keyword=${keyword}&category=${category}&sort=${sort}&pageNumber=${pageNumber}`;
+      if (minPrice) url += `&minPrice=${minPrice}`;
+      if (maxPrice) url += `&maxPrice=${maxPrice}`;
+      if (minRating) url += `&minRating=${minRating}`;
+      const { data } = await axios.get(url);
       return { ...data, pageNumber }; // Pass pageNumber so reducer knows whether to append or replace
     } catch (error) {
       return rejectWithValue(
