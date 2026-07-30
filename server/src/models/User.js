@@ -43,6 +43,13 @@ const userSchema = new mongoose.Schema({
     instagram: { type: String, default: '' },
     tiktok: { type: String, default: '' },
   },
+
+  // Vendor Subscription System
+  subscription: {
+    status: { type: String, enum: ['active', 'inactive', 'past_due', 'trial'], default: 'trial' },
+    plan: { type: String, enum: ['free', 'pro', 'premium'], default: 'free' },
+    expiresAt: { type: Date }
+  },
   
   // Wallet System (Escrow)
   wallet: {

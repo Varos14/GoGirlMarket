@@ -4,9 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import HomeScreen from './pages/HomeScreen';
 import ShopScreen from './pages/ShopScreen';
 import ProductDetailsScreen from './pages/ProductDetailsScreen';
-import ShippingScreen from './pages/ShippingScreen';
-import PaymentScreen from './pages/PaymentScreen';
-import PlaceOrderScreen from './pages/PlaceOrderScreen';
+import CheckoutScreen from './pages/CheckoutScreen';
 import LoginScreen from './pages/LoginScreen';
 import RegisterScreen from './pages/RegisterScreen';
 import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
@@ -154,9 +152,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
           <Route path="/reset-password/:token" element={<ResetPasswordScreen />} />
           <Route path="/profile" element={<ProfileScreen />} />
-          <Route path="/shipping" element={<ShippingScreen />} />
-          <Route path="/payment" element={<PaymentScreen />} />
-          <Route path="/placeorder" element={<PlaceOrderScreen />} />
+          <Route path="/checkout" element={<CheckoutScreen />} />
           <Route path="/order/:id" element={<OrderScreen />} />
           <Route path="/wishlist" element={<WishlistScreen />} />
 

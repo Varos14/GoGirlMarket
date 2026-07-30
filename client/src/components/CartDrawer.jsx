@@ -23,7 +23,7 @@ const CartDrawer = () => {
 
   const handleCheckout = () => {
     dispatch(closeCartDrawer());
-    navigate('/shipping');
+    navigate('/checkout');
   };
 
   const handleViewCart = () => {

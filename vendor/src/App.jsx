@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, ShoppingBag, Settings, LogOut, Wallet, Tag } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingBag, Settings, LogOut, Wallet, Tag, Shield } from 'lucide-react';
 import DashboardScreen from './pages/DashboardScreen';
 import ProductsScreen from './pages/ProductsScreen';
 import OrdersScreen from './pages/OrdersScreen';
@@ -11,6 +11,7 @@ import LoginScreen from './pages/LoginScreen';
 import RegisterScreen from './pages/RegisterScreen';
 import ForgotPasswordScreen from './pages/ForgotPasswordScreen';
 import ResetPasswordScreen from './pages/ResetPasswordScreen';
+import SubscriptionScreen from './pages/SubscriptionScreen';
 
 function App() {
   const location = useLocation();
@@ -69,6 +70,10 @@ function App() {
                 <Wallet size={15} />
                 Wallet
               </Link>
+              <Link to="/subscription" className={`flex items-center gap-1.5 text-xs ${isActive('/subscription')}`}>
+                <Shield size={15} />
+                Plan
+              </Link>
               <Link to="/settings" className={`flex items-center gap-1.5 text-xs ${isActive('/settings')}`}>
                 <Settings size={15} />
                 Settings
@@ -110,6 +115,7 @@ function App() {
           <Route path="/orders" element={<OrdersScreen />} />
           <Route path="/coupons" element={<CouponsScreen />} />
           <Route path="/wallet" element={<WalletScreen />} />
+          <Route path="/subscription" element={<SubscriptionScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
         </Routes>
       </main>
@@ -135,6 +141,10 @@ function App() {
         <Link to="/wallet" className={`flex flex-col items-center justify-center gap-1 text-[10px] font-semibold ${location.pathname === '/wallet' ? 'text-accent' : 'text-textMuted hover:text-accent'}`}>
           <Wallet size={18} />
           <span>Wallet</span>
+        </Link>
+        <Link to="/subscription" className={`flex flex-col items-center justify-center gap-1 text-[10px] font-semibold ${location.pathname === '/subscription' ? 'text-accent' : 'text-textMuted hover:text-accent'}`}>
+          <Shield size={18} />
+          <span>Plan</span>
         </Link>
       </nav>
     </div>

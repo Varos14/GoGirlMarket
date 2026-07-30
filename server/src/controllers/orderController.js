@@ -31,7 +31,7 @@ const addOrderItems = async (req, res) => {
       } else {
         // 1. Fetch products and populate vendor details to resolve exact vendor email & phone
         const productIds = orderItems.map((item) => item.product);
-        const productsFromDb = await Product.find({ _id: { $in: productIds } }).populate('vendor', 'name storeName email phone');
+        const productsFromDb = await Product.find({ _id: { $in: productIds } }).populate('vendor', 'name storeName email phone commissionRate');
 
         // 2. Group items by vendor
         const vendorGroups = {};
@@ -54,6 +54,9 @@ const addOrderItems = async (req, res) => {
               items: [],
               shippingPrice: 0, // Shipping is paid off-platform on delivery
               discountAmount: 0,
+              platformFee: 0,
+              vendorPayout: 0,
+              vendorCommissionRate: vendorDoc?.commissionRate || 10,
               couponCode: null,
               isDelivered: false
             };
@@ -125,7 +128,20 @@ const addOrderItems = async (req, res) => {
           }
         }
 
-        const vendorOrders = Object.values(vendorGroups);
+        // 4. Calculate Platform Fee and Vendor Payout for each vendor group
+        const vendorOrders = Object.values(vendorGroups).map(group => {
+          const groupTotal = group.items.reduce((acc, item) => acc + item.price * item.qty, 0);
+          const afterDiscount = groupTotal - group.discountAmount;
+          // Calculate platform fee based on the after-discount price
+          const fee = Math.round(afterDiscount * (group.vendorCommissionRate / 100));
+          const payout = afterDiscount - fee;
+          
+          return {
+            ...group,
+            platformFee: fee,
+            vendorPayout: payout,
+          };
+        });
         const initialStatus = paymentMethod === 'Cash on Delivery' ? 'Confirmed' : 'Pending';
 
         const order = new Order({

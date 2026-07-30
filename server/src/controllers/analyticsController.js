@@ -6,6 +6,11 @@ const Product = require('../models/Product');
 // @access  Private/Vendor
 const getVendorAnalytics = async (req, res) => {
   try {
+    const userPlan = req.user.subscription?.plan || 'free';
+    if (userPlan !== 'pro' && userPlan !== 'premium') {
+      return res.status(403).json({ message: 'Advanced Analytics is a Pro Tier feature. Please upgrade your subscription.' });
+    }
+
     const vendorIdStr = req.user._id.toString();
 
     // 1. Get all orders containing items from this vendor

@@ -121,6 +121,8 @@ const orderSchema = new mongoose.Schema(
         ],
         shippingPrice: { type: Number, default: 0.0 },
         discountAmount: { type: Number, default: 0.0 },
+        platformFee: { type: Number, default: 0.0 }, // Commission taken by GoGirlMarket
+        vendorPayout: { type: Number, default: 0.0 }, // Amount to be paid to the vendor
         couponCode: { type: String },
         isDelivered: { type: Boolean, default: false },
         deliveredAt: { type: Date },

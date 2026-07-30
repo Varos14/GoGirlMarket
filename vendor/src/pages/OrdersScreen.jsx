@@ -100,6 +100,7 @@ const OrdersScreen = () => {
                   <th className="py-3 px-4">Order ID</th>
                   <th className="py-3 px-4">Customer</th>
                   <th className="py-3 px-4">Items</th>
+                  <th className="py-3 px-4">Revenue & Fees</th>
                   <th className="py-3 px-4">Shipping Destination</th>
                   <th className="py-3 px-4 text-right">Fulfillment Status</th>
                 </tr>
@@ -134,6 +135,28 @@ const OrdersScreen = () => {
                               <span className="font-semibold line-clamp-1">{item.name}</span>
                             </div>
                           ))}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex flex-col text-[11px] space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-textMuted">Subtotal:</span>
+                            <span className="font-semibold">UGX {vendorItems.reduce((acc, item) => acc + item.price * item.qty, 0).toLocaleString()}</span>
+                          </div>
+                          {order.vendorDetails.discountAmount > 0 && (
+                            <div className="flex justify-between text-emerald-600">
+                              <span>Discount:</span>
+                              <span>-UGX {order.vendorDetails.discountAmount.toLocaleString()}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-red-500">
+                            <span>Platform Fee:</span>
+                            <span>-UGX {order.vendorDetails.platformFee?.toLocaleString() || '0'}</span>
+                          </div>
+                          <div className="border-t border-borderLight mt-1 pt-1 flex justify-between">
+                            <span className="text-primary font-bold">Your Payout:</span>
+                            <span className="text-primary font-bold">UGX {order.vendorDetails.vendorPayout?.toLocaleString() || '0'}</span>
+                          </div>
                         </div>
                       </td>
                       <td className="py-4 px-4">
